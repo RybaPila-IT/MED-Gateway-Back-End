@@ -15,11 +15,13 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
+        lowercase: true,
         maxLength: [60, 'Email cannot be longer than 60 characters, got {VALUE} characters instead']
     },
     password: {
         type: String,
-        required: true
+        required: true,
+        minLength: [5, 'Password must be at least 5 characters long']
     },
     organization: {
         type: String,
