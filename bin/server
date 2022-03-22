@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 const setUpMongooseConnection = require('../data/connection');
-const obtainPort = require('./port');
+const supplyPort = require('../suppliers/port');
 const app = require('../app');
 const debug = require('debug')('med-gateway-back-end:server');
 const http = require('http');
 
-const port = obtainPort();
+const port = supplyPort();
 const server = http.createServer(app);
 
 setUpMongooseConnection(() => {

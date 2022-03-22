@@ -1,13 +1,13 @@
-const envParameterSupplier = require('../env/supplier');
+const envParameterSupply = require('./envParameters');
 
 const portNumberKey = 'PORT';
 const defaultPort = 3000;
 
 function obtainPort(
-    supplier = envParameterSupplier,
+    supply = envParameterSupply,
     fallbackPort = defaultPort
 ) {
-    const portFromEnv = supplier(portNumberKey);
+    const portFromEnv = supply(portNumberKey);
     if (!portFromEnv) return fallbackPort;
     const parsedPort = parseInt(portFromEnv);
     return isNaN(parsedPort) ? fallbackPort : parsedPort;
