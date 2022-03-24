@@ -37,6 +37,15 @@ const userSchema = new mongoose.Schema({
             },
             default: 'unverified'
         },
+        permission: {
+            type: String,
+            required: true,
+            enum: {
+                values: ['user', 'admin'],
+                message: '{VALUE} is not supported user permission type'
+            },
+            default: 'user'
+        },
         picture: {
             type: String,
             default: ''
