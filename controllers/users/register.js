@@ -17,20 +17,20 @@ const tryRegisterUser = (req, res, next) => {
             organization
         })
         .then(createdUser => {
-          res
-              .status(httpStatus.CREATED)
-              .json({
-                  ...createdUser['_doc']
-              });
+            res
+                .status(httpStatus.CREATED)
+                .json({
+                    ...createdUser['_doc']
+                });
         })
         .catch(err => {
-            console.log(chalk.red('error: creating the user', err.message));
+            console.log(chalk.red('error: creating the user:', err.message));
             next(new Error('error: creating user'));
         })
 }
 
 const registerUser = [
-        ...registerUserMiddlewarePipeline,
+    ...registerUserMiddlewarePipeline,
     tryRegisterUser
 ];
 

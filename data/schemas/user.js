@@ -68,7 +68,7 @@ userSchema.post('save', (err, doc, next) => {
     const duplicateKeyErrorCode = 11000;
     const mongoServerError = 'MongoServerError';
     if (err.name === mongoServerError && err.code === duplicateKeyErrorCode) {
-        return next(new Error('Email address conflict; provided email is already in use'));
+        return next(new Error('email address conflict; provided email is already in use'));
     }
     next();
 });
