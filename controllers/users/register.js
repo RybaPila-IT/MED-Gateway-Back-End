@@ -4,7 +4,6 @@ const chalk = require('chalk');
 const registerUserMiddlewarePipeline = require('../../middleware/users/register');
 const User = require('../../data/models/user');
 
-
 const tryRegisterUser = (req, res, next) => {
     const {name, surname, email, password, organization} = req.body;
 
