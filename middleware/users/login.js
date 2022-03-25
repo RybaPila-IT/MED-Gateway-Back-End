@@ -1,6 +1,7 @@
 const httpStatus = require("http-status-codes");
 const chalk = require("chalk");
 const bcrypt = require('bcrypt');
+
 const User = require('../../data/models/user');
 
 const ensureUserLoginDataIsPresent = (req, res, next) => {
