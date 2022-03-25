@@ -6,6 +6,7 @@ const logger = require('morgan');
 
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
+const notFoundRouter = require('./routes/notFound');
 
 const {errorHandler} = require('./middleware/error/error');
 
@@ -17,8 +18,9 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/api/users', usersRouter);
 
+app.use('/*', notFoundRouter);
 app.use(errorHandler);
 
 module.exports = app;

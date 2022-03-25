@@ -1,9 +1,16 @@
 const express = require('express');
 const router = express.Router();
 
-/* GET users listing. */
-router.get('/', function(req, res) {
-  res.json({message: 'This is where message will be changed'});
-});
+const registerUser = require('../controllers/users/register');
+const loginUser = require('../controllers/users/login');
+
+router.post('/register', registerUser);
+router.post('/login', loginUser);
+
+router
+    .route('/me')
+    .get()
+    .put()
+    .delete()
 
 module.exports = router;

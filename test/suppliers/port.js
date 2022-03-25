@@ -1,7 +1,7 @@
 const chai = require('chai');
 const assert = chai.assert;
 
-const obtainPort = require('../suppliers/port');
+const obtainPort = require('../../suppliers/port');
 
 suite('Test obtainPort', () => {
    test('No port supplied', () => {
