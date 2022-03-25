@@ -1,10 +1,9 @@
 const httpStatus = require('http-status-codes');
 const jwt = require('jsonwebtoken');
+const {jwtSecretKey} = require('../../suppliers/constants');
 
 const loginUserMiddlewarePipeline = require('../../middleware/users/login');
 const chalk = require("chalk");
-
-const jwtSecretKey = 'JWT_SECRET';
 
 const authenticateUserWithToken = (req, res, next) => {
     const jwtSecret = process.env[jwtSecretKey];
