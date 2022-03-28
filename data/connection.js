@@ -6,7 +6,7 @@ function setUpMongooseConnection(uriKey, callback = () => {}) {
         mongoose
             .connect(process.env[uriKey])
             .then(() => {
-                console.log(chalk.green('Successfully connected to Mongo DB database'));
+                console.log(chalk.magenta('Successfully connected to Mongo DB database'));
                 callback();
             })
             .catch(err => {

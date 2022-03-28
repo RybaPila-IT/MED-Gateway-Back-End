@@ -15,7 +15,7 @@ const server = express();
 server.use(express.json());
 server.use(express.urlencoded({ extended: false }));
 
-server.post('/test',
+server.post('/api/users/register',
     ...registerUserMiddlewarePipeline,
     (req, res) => {
         res.status(httpStatus.OK).json({
@@ -44,7 +44,7 @@ suite('Test register middleware pipeline', () => {
     test('Valid registration request', (done) => {
         chai
             .request(server)
-            .post('/test')
+            .post('/api/users/register')
             .type('json')
             .send(requestData)
             .end((err, res) => {
@@ -74,7 +74,7 @@ suite('Test register middleware pipeline', () => {
 
             chai
                 .request(server)
-                .post('/test')
+                .post('/api/users/register')
                 .type('json')
                 .send(missingRequestData)
                 .end((err, res) => {

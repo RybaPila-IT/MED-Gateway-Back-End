@@ -19,7 +19,8 @@ const tryRegisterUser = (req, res, next) => {
             res
                 .status(httpStatus.CREATED)
                 .json({
-                    ...createdUser['_doc']
+                    _id: createdUser['_doc']['_id'],
+                    message: 'Your account has been successfully created'
                 });
         })
         .catch(err => {
