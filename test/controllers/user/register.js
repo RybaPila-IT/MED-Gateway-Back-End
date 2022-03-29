@@ -32,8 +32,6 @@ server.use(handleError);
 
 suite('Test register user functionality', function () {
 
-    this.timeout(5000);
-
     suiteSetup(function (done) {
         setUpMongooseConnection(mongoDbTestUriKey, done);
     })

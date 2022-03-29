@@ -17,6 +17,7 @@ const authenticateUserWithToken = (req, res, next) => {
     jwt.sign(payload, jwtSecret, options, (err, token) => {
         if (err) {
             console.log(chalk.red('error: signing a token:', err.message));
+            res.status(httpStatus.INTERNAL_SERVER_ERROR);
             return next(new Error('error: logging in'));
         }
         res.status(httpStatus.OK).json({

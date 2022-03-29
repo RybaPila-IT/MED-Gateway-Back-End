@@ -54,7 +54,6 @@ const verifyUserPassword = (req, res, next) => {
     })
 }
 
-
 const loginUserMiddlewarePipeline = [
     ensureUserLoginDataIsPresent,
     fetchUserModel,
