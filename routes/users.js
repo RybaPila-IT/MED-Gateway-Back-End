@@ -6,12 +6,12 @@ const loginUser = require('../controllers/users/login');
 const getUser = require('../controllers/users/get');
 
 
-router.post('/register', registerUser);
-router.post('/login', loginUser);
+router.post('/register', ...registerUser);
+router.post('/login', ...loginUser);
 
 router
     .route('/me')
-    .get(getUser)
+    .get(...getUser)
     .put()
     .delete()
 

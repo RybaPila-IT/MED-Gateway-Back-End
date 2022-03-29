@@ -1,8 +1,7 @@
 const httpStatus = require('http-status-codes');
 const jwt = require('jsonwebtoken');
 const chalk = require("chalk");
-
-const jwtSecretKey = 'JWT_SECRET';
+const {jwtSecretKey} = require('../../suppliers/constants')
 
 const setResponseToNotFound = (req, res, next) => {
     res.status(httpStatus.NOT_FOUND);

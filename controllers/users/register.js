@@ -19,11 +19,13 @@ const tryRegisterUser = (req, res, next) => {
             res
                 .status(httpStatus.CREATED)
                 .json({
-                    ...createdUser['_doc']
+                    _id: createdUser['_doc']['_id'],
+                    message: 'Your account has been successfully created'
                 });
         })
         .catch(err => {
             console.log(chalk.red('error: creating the user:', err.message));
+            res.status(httpStatus.CONFLICT)
             next(new Error('error: creating user'));
         })
 }
