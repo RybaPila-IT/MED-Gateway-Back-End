@@ -54,10 +54,10 @@ suite('Test register user functionality', function () {
 
         expect(res).to.have.status(httpStatus.CREATED);
         expect(res).to.be.json;
-        expect(res['body']).to.have.property('message');
-        expect(res['body']).to.have.property('_id');
+        expect(res.body).to.have.property('message');
+        expect(res.body).to.have.property('_id');
 
-        const {_id} = res['body'];
+        const {_id} = res.body;
         const user = await User.findById(_id);
 
         assert.isDefined(user);
@@ -100,10 +100,10 @@ suite('Test register user functionality', function () {
         // Expect
         expect(errRes).to.have.status(httpStatus.CONFLICT);
         expect(res).to.be.json;
-        expect(errRes['body']).to.have.property('message');
+        expect(errRes.body).to.have.property('message');
 
         // // Clear the database after test
-        const {_id} = res['body'];
+        const {_id} = res.body;
         await User.deleteOne({_id});
     })
 

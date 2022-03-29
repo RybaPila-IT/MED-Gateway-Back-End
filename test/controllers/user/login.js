@@ -2,6 +2,7 @@ require('dotenv').config()
 
 const express = require('express');
 const mongoose = require("mongoose");
+const httpStatus = require('http-status-codes');
 const jwt = require('jsonwebtoken');
 const chaiHttp = require('chai-http');
 const chai = require('chai');
@@ -64,7 +65,7 @@ suite('Test user login controller', function () {
                 password: 'password'
             })
 
-        expect(res).to.be.ok;
+        expect(res).to.have.status(httpStatus.OK);
         expect(res).to.be.json;
 
         const {body} = res;

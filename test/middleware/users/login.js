@@ -74,7 +74,7 @@ suite('Test login middleware pipeline', function () {
                 password: 'password',
             })
 
-        expect(res).to.be.ok;
+        expect(res).to.have.status(httpStatus.OK);
         expect(res).to.be.json;
         assert.strictEqual(res.body.message, expectedMessage);
     })
