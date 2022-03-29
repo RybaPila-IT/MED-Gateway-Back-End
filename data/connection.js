@@ -18,7 +18,7 @@ function setUpMongooseConnection(uriKey, callback = () => {}) {
             console.log(chalk.red('Mongoose error:', err));
         });
         mongoose.connection.on('disconnected', () => {
-            console.log(chalk.magenta('Disconnected from mongoose server'));
+            console.log(chalk.magenta('Disconnected from Mongo database'));
         });
     }
     makeInitialMongooseConnection();
