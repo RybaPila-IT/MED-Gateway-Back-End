@@ -24,7 +24,7 @@ server.use(express.urlencoded({extended: false}));
 server.post('/api/users/register', ...registerUser)
 
 const handleError = (err, req, res, next) => {
-    res.status(httpStatus.BAD_REQUEST).json({message: err.message});
+    res.json({message: err.message});
 }
 
 server.use(handleError);
@@ -100,7 +100,7 @@ suite('Test register user functionality', function () {
             .send(requestData)
 
         // Expect
-        expect(errRes).to.have.status(httpStatus.BAD_REQUEST);
+        expect(errRes).to.have.status(httpStatus.CONFLICT);
         expect(res).to.be.json;
         expect(errRes['body']).to.have.property('message');
 

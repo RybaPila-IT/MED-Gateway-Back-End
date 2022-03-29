@@ -30,7 +30,7 @@ const fetchUserModel = (req, res, next) => {
         if (!user) {
             console.log(chalk.yellow('warning: user not found; email:', email));
             res.status(httpStatus.UNAUTHORIZED);
-            return next(new Error('error: user with provided email does not exist'));
+            return next(new Error('error: credentials mismatch'));
         }
         req['user'] = user;
         next();
@@ -48,7 +48,7 @@ const verifyUserPassword = (req, res, next) => {
         if (!match) {
             console.log(chalk.yellow('warning: supplied wrong credentials for user', req.user._id));
             res.status(httpStatus.UNAUTHORIZED);
-            return next(new Error('credentials mismatch'));
+            return next(new Error('error: credentials mismatch'));
         }
         next();
     })

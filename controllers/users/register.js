@@ -25,6 +25,7 @@ const tryRegisterUser = (req, res, next) => {
         })
         .catch(err => {
             console.log(chalk.red('error: creating the user:', err.message));
+            res.status(httpStatus.CONFLICT)
             next(new Error('error: creating user'));
         })
 }

@@ -1,100 +1,158 @@
-// require('dotenv').config();
-// const express = require('express');
-// const httpStatus = require('http-status-codes');
-// const chaiHttp = require('chai-http');
-// const chai = require('chai');
-// const bcrypt = require('bcrypt');
-// const assert = chai.assert;
-// const expect = chai.expect;
-//
-// chai.use(chaiHttp);
-//
-// const {mongoDbTestUriKey} = require('../../../suppliers/constants');
-// const setUpMongooseConnection = require('../../../data/connection');
-// const loginUserMiddlewarePipeline = require('../../../middleware/users/login');
-//
-// const server = express();
-//
-// server.use(express.json());
-// server.use(express.urlencoded({ extended: false }));
-//
-// server.post('/test',
-//     ...loginUserMiddlewarePipeline,
-//     (req, res) => {
-//         res.status(httpStatus.OK).json({
-//             ...req.body
-//         })
-//     }
-// )
-//
-// const handleError = (err, req, res, next) => {
-//     res.status(httpStatus.BAD_REQUEST).json({message: err.message});
-// }
-//
-// server.use(handleError);
-//
-//
-// suite('Test login middleware pipeline', () => {
-//
-//     // const requestData = {
-//     //     name: 'name',
-//     //     surname: 'surname',
-//     //     email: 'email',
-//     //     password: 'password',
-//     //     organization: 'organization'
-//     // }
-//     //
-//     // test('Valid registration request', (done) => {
-//     //
-//     //     setUpMongooseConnection(mongoDbTestUriKey, () => {
-//     //         chai
-//     //             .request(server)
-//     //             .post('/test')
-//     //             .type('json')
-//     //             .send(requestData)
-//     //             .end((err, res) => {
-//     //                 expect(err).to.be.null;
-//     //                 expect(res).to.have.status(httpStatus.OK);
-//     //                 expect(res).to.be.json;
-//     //                 assert.strictEqual(res.body.name, requestData['name']);
-//     //                 assert.strictEqual(res.body.surname, requestData['surname']);
-//     //                 assert.strictEqual(res.body.email, requestData['email']);
-//     //                 assert.strictEqual(res.body.organization, requestData['organization']);
-//     //                 assert.isTrue(bcrypt.compareSync(requestData['password'], res.body.password));
-//     //                 done();
-//     //             })
-//     //     });
-//     // });
-//     //
-//     // test('Missing any of the fields', (done) => {
-//     //
-//     //     let i = 0;
-//     //
-//     //     for (const key in requestData) {
-//     //
-//     //         let missingRequestData = Object.assign({}, requestData);
-//     //         delete missingRequestData[key];
-//     //
-//     //         // Use i as the counter to know, how many tests started execution.
-//     //         i++;
-//     //
-//     //         chai
-//     //             .request(server)
-//     //             .post('/test')
-//     //             .type('json')
-//     //             .send(missingRequestData)
-//     //             .end((err, res) => {
-//     //                 expect(err).to.be.null;
-//     //                 expect(res).to.have.status(httpStatus.BAD_REQUEST);
-//     //                 expect(res).to.be.json;
-//     //                 expect(res).to.have.property('body');
-//     //                 expect(res.body).to.have.property('message');
-//     //                 // If we are the last test to finish execution, call done function.
-//     //                 if (--i === 0) {
-//     //                     done();
-//     //                 }
-//     //             })
-//     //     }
-//     //
-//     // });
-// })
+require('dotenv').config();
+
+const express = require('express');
+const httpStatus = require('http-status-codes');
+const chaiHttp = require('chai-http');
+const bcrypt = require('bcrypt');
+const chai = require('chai');
+const assert = chai.assert;
+const expect = chai.expect;
+
+chai.use(chaiHttp);
+
+const {mongoDbTestUriKey} = require('../../../suppliers/constants');
+const setUpMongooseConnection = require('../../../data/connection');
+const loginUserMiddlewarePipeline = require('../../../middleware/users/login');
+const User = require('../../../data/models/user');
+const mongoose = require("mongoose");
+const chalk = require("chalk");
+
+const server = express();
+
+server.use(express.json());
+server.use(express.urlencoded({extended: false}));
+
+server.post('/api/users/login',
+    ...loginUserMiddlewarePipeline,
+    (req, res) => {
+        res.status(httpStatus.OK).json({
+            message: 'All went successfully'
+        })
+    }
+)
+
+const handleError = (err, req, res, next) => {
+    res.json({message: err.message});
+}
+
+server.use(handleError);
+
+
+suite('Test login middleware pipeline', function () {
+
+    this.timeout(5000);
+
+    suiteSetup(function (done) {
+        setUpMongooseConnection(mongoDbTestUriKey, () => {
+
+            const salt = bcrypt.genSaltSync(10);
+
+            User
+                .create({
+                    name: 'name',
+                    surname: 'surname',
+                    email: 'email',
+                    password: bcrypt.hashSync('password', salt),
+                    organization: 'organization'
+                })
+                .then(user => {
+                    console.log(chalk.green('Initial user has been created, id:', user['_id']));
+                    done();
+                })
+                .catch(done)
+        })
+    })
+
+    test('Valid login request', async function () {
+
+        const expectedMessage = 'All went successfully';
+
+        const res = await chai
+            .request(server)
+            .post('/api/users/login')
+            .type('json')
+            .send({
+                email: 'email',
+                password: 'password',
+            })
+
+        expect(res).to.be.ok;
+        expect(res).to.be.json;
+        assert.strictEqual(res.body.message, expectedMessage);
+    })
+
+    test('Missing email property', async function () {
+
+        const expectedMessage = 'error: user email property is not specified';
+
+        const res = await chai
+            .request(server)
+            .post('/api/users/login')
+            .type('json')
+            .send({
+                password: 'password'
+            })
+
+        expect(res).to.have.status(httpStatus.BAD_REQUEST);
+        expect(res).to.be.json;
+        assert.strictEqual(res.body.message, expectedMessage);
+    })
+
+    test('Missing password property', async function () {
+
+        const expectedMessage = 'error: user password property is not specified';
+
+        const res = await chai
+            .request(server)
+            .post('/api/users/login')
+            .type('json')
+            .send({
+                email: 'email'
+            })
+
+        expect(res).to.have.status(httpStatus.BAD_REQUEST);
+        expect(res).to.be.json;
+        assert.strictEqual(res.body.message, expectedMessage);
+    })
+
+    test('Email not present in database', async function () {
+
+        const expectedMessage = 'error: credentials mismatch';
+
+        const res = await chai
+            .request(server)
+            .post('/api/users/login')
+            .type('json')
+            .send({
+                email: 'email2',
+                password: 'password',
+            })
+
+        expect(res).to.have.status(httpStatus.UNAUTHORIZED);
+        expect(res).to.be.json;
+        assert.strictEqual(res.body.message, expectedMessage);
+    })
+
+    test('Passwords do not match', async function () {
+
+        const expectedMessage = 'error: credentials mismatch';
+
+        const res = await chai
+            .request(server)
+            .post('/api/users/login')
+            .type('json')
+            .send({
+                email: 'email',
+                password: 'password2',
+            })
+
+        expect(res).to.have.status(httpStatus.UNAUTHORIZED);
+        expect(res).to.be.json;
+        assert.strictEqual(res.body.message, expectedMessage);
+    })
+
+    suiteTeardown(async function () {
+        await User.deleteMany({});
+        await mongoose.connection.close();
+    })
+})

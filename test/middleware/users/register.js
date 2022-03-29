@@ -25,7 +25,7 @@ server.post('/api/users/register',
 )
 
 const handleError = (err, req, res, next) => {
-    res.status(httpStatus.BAD_REQUEST).json({message: err.message});
+    res.json({message: err.message});
 }
 
 server.use(handleError);
