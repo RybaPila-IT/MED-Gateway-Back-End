@@ -13,7 +13,6 @@ jobs:
     strategy:
       matrix:
         node-version: [16]
-    environment: Development
     steps:
       - name: Checkout
         uses: actions/checkout@v3.0.0
