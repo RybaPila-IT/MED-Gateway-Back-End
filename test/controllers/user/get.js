@@ -6,7 +6,6 @@ const jwt = require('jsonwebtoken');
 const httpStatus = require('http-status-codes');
 const chaiHttp = require('chai-http');
 const chai = require('chai');
-const chalk = require("chalk");
 const bcrypt = require('bcrypt');
 const expect = chai.expect;
 const assert = chai.assert;
@@ -25,6 +24,7 @@ server.use(express.urlencoded({extended: false}));
 
 server.post('/api/users/me', ...getUser);
 
+//noinspection JSUnusedLocalSymbols
 const handleError = (err, req, res, next) => {
     res.json({message: err.message});
 }
@@ -49,7 +49,6 @@ suite('Test get user controller', function () {
                     organization: 'PW'
                 })
                 .then(user => {
-                    console.log(chalk.green('Initial user has been created, id:', user['_id']));
                     _id = user['_id'];
                     done();
                 })

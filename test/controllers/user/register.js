@@ -23,6 +23,7 @@ server.use(express.urlencoded({extended: false}));
 
 server.post('/api/users/register', ...registerUser)
 
+//noinspection JSUnusedLocalSymbols
 const handleError = (err, req, res, next) => {
     res.json({message: err.message});
 }

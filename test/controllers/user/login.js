@@ -6,7 +6,6 @@ const httpStatus = require('http-status-codes');
 const jwt = require('jsonwebtoken');
 const chaiHttp = require('chai-http');
 const chai = require('chai');
-const chalk = require("chalk");
 const bcrypt = require('bcrypt');
 const expect = chai.expect;
 const assert = chai.assert;
@@ -25,7 +24,7 @@ server.use(express.urlencoded({extended: false}));
 
 server.post('/api/users/login', loginUser)
 
-const handleError = (err, req, res, next) => {
+const handleError = (err, req, res) => {
     res.json({message: err.message});
 }
 
@@ -47,8 +46,7 @@ suite('Test user login controller', function () {
                     organization: 'sample',
                     last_login: new Date(2022, 1, 12, 12, 0, 0, 0)
                 })
-                .then(user => {
-                    console.log(chalk.green('Initial user has been created, id:', user['_id']));
+                .then(() => {
                     done();
                 })
                 .catch(done)

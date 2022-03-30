@@ -5,6 +5,7 @@ const httpStatus = require('http-status-codes');
 const chaiHttp = require('chai-http');
 const bcrypt = require('bcrypt');
 const chai = require('chai');
+const mongoose = require("mongoose");
 const assert = chai.assert;
 const expect = chai.expect;
 
@@ -14,8 +15,6 @@ const {mongoDbTestUriKey} = require('../../../suppliers/constants');
 const setUpMongooseConnection = require('../../../data/connection');
 const loginUserMiddlewarePipeline = require('../../../middleware/users/login');
 const User = require('../../../data/models/user');
-const mongoose = require("mongoose");
-const chalk = require("chalk");
 
 const server = express();
 
@@ -31,6 +30,7 @@ server.post('/api/users/login',
     }
 )
 
+//noinspection JSUnusedLocalSymbols
 const handleError = (err, req, res, next) => {
     res.json({message: err.message});
 }
@@ -53,8 +53,7 @@ suite('Test login middleware pipeline', function () {
                     password: bcrypt.hashSync('password', salt),
                     organization: 'organization'
                 })
-                .then(user => {
-                    console.log(chalk.green('Initial user has been created, id:', user['_id']));
+                .then(() => {
                     done();
                 })
                 .catch(done)
