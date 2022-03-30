@@ -2,14 +2,9 @@ name: test-project
 on:
   pull_request:
       branches: [ main ]
-      types:
-        - opened
-        - edited
-        - synchronize
-      paths:
-        - '**.js'
+      types: [opened, synchronize, reopened]
 env:
-  MONGO_TEST_URI: ${{ secrets.MONGO_URI }}
+  MONGO_TEST_URI: ${{ secrets.MONGO_TEST_URI }}
   JWT_SECRET: ${{ secrets.JWT_SECRET }}
 jobs:
   build-and-test:
