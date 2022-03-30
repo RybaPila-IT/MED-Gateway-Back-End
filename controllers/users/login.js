@@ -20,16 +20,39 @@ const authenticateUserWithToken = (req, res, next) => {
             res.status(httpStatus.INTERNAL_SERVER_ERROR);
             return next(new Error('error: logging in'));
         }
-        res.status(httpStatus.OK).json({
-            ...payload,
-            token
-        });
+        req['token'] = token;
+        req['payload'] = payload;
+        next();
+    });
+}
+
+const updateUserLastLogin = (req, res, next) => {
+    const {user: User} = req;
+    User
+        .updateOne({last_login: Date.now()})
+        .then(() => {
+            next()
+        })
+        .catch(err => {
+            console.log(chalk.red('error: updating user model', err.message));
+            res.statusCode(httpStatus.INTERNAL_SERVER_ERROR);
+            next(new Error('error: updating user model'));
+        })
+}
+
+const sendResponse = (req, res) => {
+    const {token, payload} = req;
+    res.status(httpStatus.OK).json({
+        ...payload,
+        token
     });
 }
 
 const loginUser = [
     ...loginUserMiddlewarePipeline,
-    authenticateUserWithToken
+    authenticateUserWithToken,
+    updateUserLastLogin,
+    sendResponse
 ];
 
 module.exports = loginUser;

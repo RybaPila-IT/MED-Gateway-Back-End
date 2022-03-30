@@ -44,7 +44,8 @@ suite('Test user login controller', function () {
                     surname: 'sample',
                     email: 'email',
                     password: bcrypt.hashSync('password', salt),
-                    organization: 'sample'
+                    organization: 'sample',
+                    last_login: new Date(2022, 1, 12, 12, 0, 0, 0)
                 })
                 .then(user => {
                     console.log(chalk.green('Initial user has been created, id:', user['_id']));
@@ -55,7 +56,7 @@ suite('Test user login controller', function () {
         })
     })
 
-    test('Signing a token', async function() {
+    test('Correct login request', async function() {
         const res = await chai
             .request(server)
             .post('/api/users/login')
@@ -89,6 +90,15 @@ suite('Test user login controller', function () {
         } catch (err) {
             assert.fail(`unexpected error: ${err.message}`);
         }
+
+        // Check whether last login field has been updated correctly.
+        const {_id} = body;
+        const user = await User.findById(_id);
+        const dateMilliseconds = new Date(user['last_login']).getTime();
+        const nowMilliseconds = Date.now();
+        // Assuming that both dates may differ by at most 1s.
+        const delta = 1000;
+        assert.approximately(dateMilliseconds, nowMilliseconds, delta);
     })
 
     suiteTeardown(async function() {
