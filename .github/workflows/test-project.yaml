@@ -42,8 +42,5 @@ jobs:
         if: steps.cache-npm-dependencies.cache-hit != 'true'
         run: npm install
 
-#      - name: Test project
-#        run: npm test
-
-      - name: Say something
-        run: echo "JWT SECRET $JWT_SECRET"
+      - name: Test project
+        run: npm test

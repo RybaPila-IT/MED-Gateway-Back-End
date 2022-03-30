@@ -35,6 +35,8 @@ suite('Test get user controller', function () {
 
     let _id = 0;
 
+    console.log('jwt secret', process.env['JWT_SECRET']);
+
     suiteSetup(function (done) {
         setUpMongooseConnection(mongoDbTestUriKey, () => {
 
