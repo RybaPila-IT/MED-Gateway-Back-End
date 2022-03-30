@@ -5,6 +5,9 @@ on:
       types:
         - opened
         - edited
+        - synchronize
+      paths:
+        - '**.js'
 env:
   MONGO_TEST_URI: ${{ secrets.MONGO_URI }}
   JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -15,6 +18,7 @@ jobs:
     strategy:
       matrix:
         node-version: [16]
+    environment: Development
     steps:
       - name: Checkout
         uses: actions/checkout@v3.0.0
@@ -35,7 +39,7 @@ jobs:
               ${{ runner.os }}-build-cache-npm-
 
       - name: Install dependecies
-        if: steps.cache-npm-dependencies.cache-hit != 'true
+        if: steps.cache-npm-dependencies.cache-hit != 'true'
         run: npm install
 
       - name: Test project
