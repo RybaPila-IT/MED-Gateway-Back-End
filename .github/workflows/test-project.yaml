@@ -44,3 +44,6 @@ jobs:
 
       - name: Test project
         run: npm test
+
+      - name: Say something
+        run: echo "JWT SECRET $JWT_SECRET"
