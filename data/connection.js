@@ -1,12 +1,14 @@
 const chalk = require('chalk');
 const mongoose = require('mongoose');
 
-function setUpMongooseConnection(uriKey, callback = () => {}) {
+function setUpMongooseConnection(uriKey, callback = () => {}, verbose = false) {
     const makeInitialMongooseConnection = () => {
         mongoose
             .connect(process.env[uriKey])
             .then(() => {
-                console.log(chalk.magenta('Successfully connected to Mongo database'));
+                if (verbose) {
+                    console.log(chalk.magenta('Successfully connected to Mongo database'));
+                }
                 callback();
             })
             .catch(err => {
@@ -18,7 +20,9 @@ function setUpMongooseConnection(uriKey, callback = () => {}) {
             console.log(chalk.red('Mongoose error:', err));
         });
         mongoose.connection.on('disconnected', () => {
-            console.log(chalk.magenta('Disconnected from Mongo database'));
+            if (verbose) {
+                console.log(chalk.magenta('Disconnected from Mongo database'));
+            }
         });
     }
     makeInitialMongooseConnection();
