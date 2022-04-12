@@ -31,7 +31,7 @@ const handleError = (err, req, res, next) => {
 server.use(handleError);
 
 
-suite('Test register user functionality', function () {
+suite('Test register user controller', function () {
 
     suiteSetup(function (done) {
         setUpMongooseConnection(mongoDbTestUriKey, done);

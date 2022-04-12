@@ -7,6 +7,7 @@ const cors = require('cors');
 
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
+const productsRouter = require('./routes/products');
 const notFoundRouter = require('./routes/notFound');
 
 const {errorHandler} = require('./middleware/error/error');
@@ -25,6 +26,7 @@ app.use(
 
 app.use('/', indexRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/products', productsRouter);
 
 app.use('/*', notFoundRouter);
 app.use(errorHandler);
