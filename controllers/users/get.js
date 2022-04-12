@@ -25,7 +25,6 @@ const getUserData = (req, res, next) => {
         })
         .catch(err => {
             console.log(chalk.red('error: fetching user model with valid token', err.message));
-            res.statusCode(httpStatus.INTERNAL_SERVER_ERROR);
             return next(new Error('error: login attempt performed with valid token failed'));
         })
 }
