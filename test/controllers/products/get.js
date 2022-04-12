@@ -56,7 +56,7 @@ suite('Test get single product controller', function () {
         })
     })
 
-    test('Get product', async function() {
+    test('Get product', async function () {
 
         const res = await chai
             .request(server)
@@ -84,7 +84,7 @@ suite('Test get single product controller', function () {
         assert.strictEqual(body.usage_description, 'This is usage description');
     })
 
-    test('Invalid get product request (wrong id)', async function() {
+    test('Invalid get product request (wrong id)', async function () {
 
         const expectedErrorMessage = 'error: unable to fetch data for product with id 123';
 
@@ -102,10 +102,74 @@ suite('Test get single product controller', function () {
         assert.strictEqual(body.message, expectedErrorMessage);
     })
 
-    suiteTeardown(async function() {
+    suiteTeardown(async function () {
         await Product.deleteMany({})
         await mongoose.connection.close();
     })
 })
 
+
+suite('Test get products summary controller', function () {
+
+    let expectedResponseSummary = [];
+
+    suiteSetup(function (done) {
+        setUpMongooseConnection(mongoDbTestUriKey, () => {
+            Product
+                .create([
+                    {
+                        name: 'Product-1',
+                        short_description: 'Product-1 short description',
+                        full_description: 'Product-1 full description',
+                        picture: 'URL of the picture',
+                        usage_description: 'Product-1 usage description'
+                    },
+                    {
+                        name: 'Product-2',
+                        short_description: 'Product-2 short description',
+                        full_description: 'Product-2 full description',
+                        picture: 'URL of the picture',
+                        usage_description: 'Product-2 usage description'
+                    },
+                    {
+                        name: 'Product-3',
+                        short_description: 'Product-3 short description',
+                        full_description: 'Product-3 full description',
+                        picture: 'URL of the picture',
+                        usage_description: 'Product-3 usage description'
+                    }
+                ])
+                .then(products => {
+                    expectedResponseSummary = products.map(product => ({
+                        name: product['name'],
+                        picture: product['picture'],
+                        short_description: product['short_description'],
+                        _id: product['_id'].toString()
+                    }))
+                    done();
+                })
+                .catch(done)
+        })
+    })
+
+    test('Get products summary', async function () {
+
+        const res = await chai
+            .request(server)
+            .get('/api/products')
+
+        expect(res).to.have.status(httpStatus.OK);
+        expect(res).to.be.json;
+
+        const {body} = res;
+        expect(body).to.have.property('length');
+        expect(body.length).to.eql(3);
+        expect(body).to.have.deep.members(expectedResponseSummary);
+    })
+
+    suiteTeardown(async function () {
+        await Product.deleteMany({})
+        await mongoose.connection.close();
+    })
+})
 
