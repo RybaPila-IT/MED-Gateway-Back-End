@@ -14,7 +14,6 @@ const isProductIdPresent = (req, res, next) => {
 const getSingleProductMiddlewarePipeline = [
     isProductIdPresent
 ]
-
 // This pipeline is empty but is created in order
 // to keep programming consistency.
 const getProductsSummaryMiddlewarePipeline = [];

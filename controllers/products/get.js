@@ -17,6 +17,14 @@ const getProductData = (req, res, next) => {
     Product
         .findById(productId, projection)
         .then(product => {
+            if (!product) {
+                return res
+                    .status(httpStatus.BAD_REQUEST)
+                    .json({
+                        'message': `product with id ${productId} does not exist`
+                    })
+            }
+            // If product is valid, make response.
             res
                 .status(httpStatus.OK)
                 .json({
