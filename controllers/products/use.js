@@ -6,6 +6,8 @@
 const fetch = require('node-fetch')
 const httpStatus = require('http-status-codes')
 const chalk = require('chalk')
+const cloudinary = require('cloudinary').v2;
+const uuid = require('uuid')
 
 const {
     dicomConverterAccessToken,
@@ -49,6 +51,14 @@ const productIdToAccessToken = {
 }
 
 
+const productIdStoresPhoto = {
+    // Fetal-Net.
+    '625576dda784a265d36ff314': true,
+    // Baby-Net, which is not suppoerted yet.
+    '6256a8a79bceb35be10e391e': false
+}
+
+
 const convertImageData = async (req, res, next) => {
     const {data} = req.body;
     const token = process.env[dicomConverterAccessToken]
@@ -72,7 +82,7 @@ const convertImageData = async (req, res, next) => {
         res
             .status(httpStatus.INTERNAL_SERVER_ERROR)
             .json({
-                'message': `DICOM-Converter: ${err.message}`
+                message: `DICOM-Converter: ${err.message}`
             });
     }
 }
@@ -103,15 +113,44 @@ const makePrediction = async (req, res, next) => {
         res
             .status(httpStatus.INTERNAL_SERVER_ERROR)
             .json({
-                'message': `Product ${productId}: ${err.message}`
+                message: `Product ${productId}: ${err.message}`
             });
     }
 }
 
 
 const storePredictionPhotoResult = (req, res, next) => {
-    // TODO (radek.r) Implement this functionality.
-    next();
+    const {productId} = req.params;
+    // End execution if we do not need to store photo.
+    if (!productIdStoresPhoto[productId]) {
+        return next();
+    }
+    // Identifier of the asset will be random.
+    const {image_bytes} = req.body.data;
+    const {_id: userId} = req.token;
+    const public_id = uuid.v4();
+    const file = `data:image/png;base64,${image_bytes}`;
+    const folder = `predictions/${userId}`;
+
+    cloudinary.uploader
+        .upload(file, {
+            public_id,
+            folder
+        })
+        .then(result => {
+            const {secure_url} = result;
+            // Store the url in the request body for adding in the DB.
+            req.body.photo_url = secure_url;
+            // Continue the execution pipeline.
+            next();
+        })
+        .catch(err => {
+            res
+                .status(httpStatus.INTERNAL_SERVER_ERROR)
+                .json({
+                    message: `Save prediction image error: ${err.error.errno}, ${err.error.code}`
+                })
+        })
 }
 
 
@@ -126,7 +165,8 @@ const sendResponse = (req, res) => {
         .status(httpStatus.OK)
         .json({
             'message': 'Your prediction has been successful!',
-            'data': req.body.data
+            'url': req.body.photo_url,
+            'prediction': req.body.data
         });
 }
 
