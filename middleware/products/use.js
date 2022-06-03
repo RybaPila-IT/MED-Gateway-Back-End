@@ -5,7 +5,7 @@ const Product = require('../../data/models/product')
 const authenticateUserMiddlewarePipeline = require('../../middleware/users/authenticate');
 
 const checkIfProductExists = (req, res, next) => {
-    const {productId} = req.params
+    const {productId} = req.params;
 
     Product
         .findById(productId)
@@ -15,7 +15,7 @@ const checkIfProductExists = (req, res, next) => {
                     .status(httpStatus.BAD_REQUEST)
                     .json({
                         'message': `product with id ${productId} does not exist`
-                    })
+                    });
             }
             // Everything is fine, call next middleware.
             next()
@@ -48,10 +48,10 @@ const ensurePredictionPropertiesArePresent = (req, res, next) => {
     next();
 }
 
-const makePredictionMiddlewarePipeline = [
+const useProductMiddlewarePipeline = [
     ...authenticateUserMiddlewarePipeline,
     checkIfProductExists,
     ensurePredictionPropertiesArePresent
 ]
 
-module.exports = makePredictionMiddlewarePipeline
+module.exports = useProductMiddlewarePipeline;
