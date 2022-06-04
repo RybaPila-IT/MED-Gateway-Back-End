@@ -1,20 +1,14 @@
-// Convert image from DICOM into PNG.
-// Forward request to product.
-// Save received image into cloudinary.
-// Make entry in history.
-// Generate response to the client.
-const fetch = require('node-fetch')
-const httpStatus = require('http-status-codes')
-const chalk = require('chalk')
+const fetch = require('node-fetch');
+const httpStatus = require('http-status-codes');
 const cloudinary = require('cloudinary').v2;
-const uuid = require('uuid')
-
+const uuid = require('uuid');
+const History = require('../../data/models/history');
+const useProductMiddlewarePipeline = require('../../middleware/products/use');
 const {
     dicomConverterAccessToken,
     fetalNetAccessToken,
     babyNetAccessToken
-} = require('../../suppliers/constants')
-const useProductMiddlewarePipeline = require('../../middleware/products/use')
+} = require('../../suppliers/constants');
 
 
 class FetchResponseError extends Error {
@@ -123,13 +117,16 @@ const storePredictionPhotoResult = (req, res, next) => {
     const {productId} = req.params;
     // End execution if we do not need to store photo.
     if (!productIdStoresPhoto[productId]) {
+        req.body.photo_url = '';
+        req.body.has_photo = false;
+        // Continue the execution pipeline.
         return next();
     }
     // Identifier of the asset will be random.
-    const {image_bytes} = req.body.data;
+    const {photo} = req.body.data;
     const {_id: userId} = req.token;
     const public_id = uuid.v4();
-    const file = `data:image/png;base64,${image_bytes}`;
+    const file = `data:image/png;base64,${photo}`;
     const folder = `predictions/${userId}`;
 
     cloudinary.uploader
@@ -141,6 +138,7 @@ const storePredictionPhotoResult = (req, res, next) => {
             const {secure_url} = result;
             // Store the url in the request body for adding in the DB.
             req.body.photo_url = secure_url;
+            req.body.has_photo = true;
             // Continue the execution pipeline.
             next();
         })
@@ -154,19 +152,100 @@ const storePredictionPhotoResult = (req, res, next) => {
 }
 
 
+const fetchUserHistory = (req, res, next) => {
+    const {productId} = req.params;
+    const {_id: userId} = req.token;
+
+    History
+        .findOne({product_id: productId, user_id: userId})
+        .then(doc => {
+            if (doc) {
+                // If the history already exists just set it into request.
+                req.body.history = doc;
+                // Continue the pipeline.
+                return next();
+            }
+            History
+                .create({
+                    product_id: productId,
+                    user_id: userId,
+                })
+                .then(doc => {
+                    // Set the history object in the request.
+                    req.body.history = doc;
+                    // Continue the pipeline.
+                    next();
+                })
+                .catch(err => {
+                    res
+                        .status(httpStatus.INTERNAL_SERVER_ERROR)
+                        .json({
+                            message: `Create history for product ${productId}: ${err.message}`
+                        });
+                })
+        })
+        .catch(err => {
+            res
+                .status(httpStatus.INTERNAL_SERVER_ERROR)
+                .json({
+                    message: `Find history for product ${productId}: ${err.message}`
+                });
+        });
+}
+
+
 const storePredictionResultInDatabase = (req, res, next) => {
-    // TODO (radek.r) Implement this functionality.
-    next();
+    const {
+        history,
+        patient_name,
+        patient_surname,
+        description,
+        has_photo,
+        photo_url,
+    } = req.body;
+    const {
+        prediction
+    } = req.body.data;
+
+    history
+        .updateOne({
+                $push: {
+                    entries: {
+                        patient_name,
+                        patient_surname,
+                        description,
+                        prediction,
+                        has_photo,
+                        photo_url
+                    }
+                }
+            }
+        )
+        .then(() => {
+            // Everything went great, continue the execution.
+            next();
+        })
+        .catch(err => {
+            res
+                .status(httpStatus.INTERNAL_SERVER_ERROR)
+                .json({
+                    message: `Update history document: ${err.message}`
+                })
+        });
 }
 
 
 const sendResponse = (req, res) => {
+    const {photo_url: url} = req.body;
+    const {prediction, photo} = req.body.data;
+
     res
         .status(httpStatus.OK)
         .json({
-            'message': 'Your prediction has been successful!',
-            'url': req.body.photo_url,
-            'prediction': req.body.data
+            message: 'Your prediction has been successful!',
+            url,
+            prediction,
+            photo
         });
 }
 
@@ -176,6 +255,7 @@ const useProduct = [
     convertImageData,
     makePrediction,
     storePredictionPhotoResult,
+    fetchUserHistory,
     storePredictionResultInDatabase,
     sendResponse
 ];
