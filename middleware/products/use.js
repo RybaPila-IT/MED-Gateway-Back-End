@@ -32,13 +32,15 @@ const ensurePredictionPropertiesArePresent = (req, res, next) => {
         patient_name,
         patient_surname,
         description,
-        data
+        data,
+        date
     } = req.body;
     const predictionRequestProperties = [
         {prop: patient_name, propName: 'patient_name'},
         {prop: patient_surname, propName: 'patient_surname'},
         {prop: description, propName: 'description'},
         {prop: data, propName: 'data'},
+        {prop: date, propName: 'date'}
     ];
     predictionRequestProperties.forEach(({prop, propName}) => {
         if (!prop) {

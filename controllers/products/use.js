@@ -202,6 +202,7 @@ const storePredictionResultInDatabase = (req, res, next) => {
         description,
         has_photo,
         photo_url,
+        date
     } = req.body;
     const {
         prediction
@@ -214,6 +215,7 @@ const storePredictionResultInDatabase = (req, res, next) => {
                         patient_name,
                         patient_surname,
                         description,
+                        date,
                         prediction,
                         has_photo,
                         photo_url

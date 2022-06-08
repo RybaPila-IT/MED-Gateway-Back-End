@@ -15,6 +15,11 @@ const historyEntrySchema = new mongoose.Schema({
         type: String,
         maxLength: [500, 'Description must be shorter than 500 characters, got {VALUE} characters instead']
     },
+    date: {
+        type: Date,
+        required: true,
+        default: new Date()
+    },
     prediction: {
         type: mongoose.Schema.Types.Mixed
     },
