@@ -12,7 +12,5 @@ router.post('/login', ...loginUser);
 router
     .route('/me')
     .get(...getUser)
-    .put()
-    .delete()
 
 module.exports = router;
