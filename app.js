@@ -10,17 +10,18 @@ const usersRouter = require('./routes/users');
 const productsRouter = require('./routes/products');
 const notFoundRouter = require('./routes/notFound');
 
-const {errorHandler} = require('./middleware/error/error');
+const {errorHandler} = require('./middleware/error/handler');
 
 const app = express();
 
 app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({limit: '1mb'}));
+app.use(express.urlencoded({ limit: '1mb', extended: false }));
 app.use(cookieParser());
 app.use(
     cors({
         origin: '*',
+        methods: ['GET', 'POST']
     })
 )
 

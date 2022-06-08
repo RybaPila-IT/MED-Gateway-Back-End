@@ -5,8 +5,14 @@ const {
     getProductsSummary,
     getProduct
 } = require('../controllers/products/get');
+const {
+    useProduct
+} = require('../controllers/products/use')
 
 router.get('/', getProductsSummary);
-router.get('/:productId', getProduct);
+
+router.route('/:productId')
+    .get(getProduct)
+    .post(useProduct)
 
 module.exports = router;
