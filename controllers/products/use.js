@@ -3,7 +3,7 @@ const httpStatus = require('http-status-codes');
 const cloudinary = require('cloudinary').v2;
 const uuid = require('uuid');
 const History = require('../../data/models/history');
-const useProductMiddlewarePipeline = require('../../middleware/products/use');
+const {useProductMiddlewarePipeline} = require('../../middleware/products/use');
 const {
     dicomConverterAccessToken,
     fetalNetAccessToken,

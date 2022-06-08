@@ -19,6 +19,7 @@ const getSingleProductMiddlewarePipeline = [
 const getProductsSummaryMiddlewarePipeline = [];
 
 module.exports = {
+    isProductIdPresent,
     getSingleProductMiddlewarePipeline,
     getProductsSummaryMiddlewarePipeline
 }
