@@ -2,7 +2,7 @@ const httpStatus = require('http-status-codes');
 const chalk = require("chalk");
 
 const User = require('../../data/models/user');
-const authenticateUserMiddlewarePipeline = require('../../middleware/users/authenticate');
+const {authenticateUserMiddlewarePipeline} = require('../../middleware/users/authenticate');
 
 const getUserData = (req, res, next) => {
     const {_id} = req.token;

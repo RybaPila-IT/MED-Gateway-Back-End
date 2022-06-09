@@ -28,11 +28,12 @@ const userSchema = new mongoose.Schema({
             required: true,
             maxLength: [100, 'Organization cannot be longer than 100 characters, got {VALUE} instead']
         },
+        // TODO (radek.r) Change this into boolean variable.
         status: {
             type: String,
             required: true,
             enum: {
-                values: ['unverified', 'active', 'blocked'],
+                values: ['unverified', 'verified'],
                 message: '{VALUE} is not supported user status option'
             },
             default: 'unverified'
