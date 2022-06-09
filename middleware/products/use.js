@@ -3,6 +3,7 @@ const chalk = require("chalk");
 
 const Product = require('../../data/models/product')
 const authenticateUserMiddlewarePipeline = require('../../middleware/users/authenticate');
+const {isProductIdPresent} = require('./get');
 
 const checkIfProductExists = (req, res, next) => {
     const {productId} = req.params;
@@ -31,13 +32,15 @@ const ensurePredictionPropertiesArePresent = (req, res, next) => {
         patient_name,
         patient_surname,
         description,
-        data
+        data,
+        date
     } = req.body;
     const predictionRequestProperties = [
         {prop: patient_name, propName: 'patient_name'},
         {prop: patient_surname, propName: 'patient_surname'},
         {prop: description, propName: 'description'},
         {prop: data, propName: 'data'},
+        {prop: date, propName: 'date'}
     ];
     predictionRequestProperties.forEach(({prop, propName}) => {
         if (!prop) {
@@ -50,8 +53,13 @@ const ensurePredictionPropertiesArePresent = (req, res, next) => {
 
 const useProductMiddlewarePipeline = [
     ...authenticateUserMiddlewarePipeline,
+    isProductIdPresent,
     checkIfProductExists,
     ensurePredictionPropertiesArePresent
 ]
 
-module.exports = useProductMiddlewarePipeline;
+module.exports = {
+    checkIfProductExists,
+    ensurePredictionPropertiesArePresent,
+    useProductMiddlewarePipeline
+};

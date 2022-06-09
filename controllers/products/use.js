@@ -3,7 +3,7 @@ const httpStatus = require('http-status-codes');
 const cloudinary = require('cloudinary').v2;
 const uuid = require('uuid');
 const History = require('../../data/models/history');
-const useProductMiddlewarePipeline = require('../../middleware/products/use');
+const {useProductMiddlewarePipeline} = require('../../middleware/products/use');
 const {
     dicomConverterAccessToken,
     fetalNetAccessToken,
@@ -202,6 +202,7 @@ const storePredictionResultInDatabase = (req, res, next) => {
         description,
         has_photo,
         photo_url,
+        date
     } = req.body;
     const {
         prediction
@@ -214,6 +215,7 @@ const storePredictionResultInDatabase = (req, res, next) => {
                         patient_name,
                         patient_surname,
                         description,
+                        date,
                         prediction,
                         has_photo,
                         photo_url
