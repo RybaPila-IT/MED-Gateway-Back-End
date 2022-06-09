@@ -11,7 +11,7 @@ const expect = chai.expect;
 chai.use(chaiHttp);
 
 const {jwtSecretKey} = require('../../../suppliers/constants')
-const authenticateUserMiddlewarePipeline = require('../../../middleware/users/authenticate');
+const {authenticateUserMiddlewarePipeline} = require('../../../middleware/users/authenticate');
 
 const server = express();
 
