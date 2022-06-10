@@ -24,14 +24,14 @@ const tryRegisterUser = (req, res, next) => {
             organization
         })
         .then(createdUser => {
-            req.user_id = createdUser['doc']['_id'];
-            req.email = createdUser['doc']['email'];
+            req.user_id = createdUser['_doc']['_id'];
+            req.email = createdUser['_doc']['email'];
             next();
         })
         .catch(err => {
             console.log(chalk.red('error: creating the user:', err.message));
             res.status(httpStatus.CONFLICT)
-            next(new Error('error: creating user'));
+            next(new Error(`error: creating user: ${err.message}`));
         })
 }
 
@@ -44,7 +44,7 @@ const generateVerificationEntry = (req, res, next) => {
             user_id
         })
         .then(ver => {
-            req.ver_id = ver['doc']['_id'];
+            req.ver_id = ver['_doc']['_id'];
             next();
         })
         .catch(err => {
