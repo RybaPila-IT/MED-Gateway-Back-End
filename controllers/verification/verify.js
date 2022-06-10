@@ -26,6 +26,8 @@ const verifyUserAccount = (req, res, next) => {
         })
 }
 
+// TODO (radek.r) Deleting verification after account status changing.
+// or even before and just storing user_id (???)
 const sendResponse = (req, res) => {
     res
         .status(httpStatus.OK)
