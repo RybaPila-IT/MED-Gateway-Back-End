@@ -238,14 +238,14 @@ const storePredictionResultInDatabase = (req, res, next) => {
 
 
 const sendResponse = (req, res) => {
-    const {photo_url: url} = req.body;
+    const {photo_url} = req.body;
     const {prediction, photo} = req.body.data;
 
     res
         .status(httpStatus.OK)
         .json({
             message: 'Your prediction has been successful!',
-            url,
+            photo_url,
             prediction,
             photo
         });

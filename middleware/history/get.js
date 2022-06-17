@@ -1,10 +1,10 @@
-const authenticateUserMiddlewarePipeline = require('../users/authenticate');
+const {authenticateAndVerifyUserMiddlewarePipeline} = require('../users/authenticate');
 const {isProductIdPresent} = require('../products/get');
 const {checkIfProductExists} = require('../products/use');
 
 
 const getHistoryMiddlewarePipeline = [
-    ...authenticateUserMiddlewarePipeline,
+    ...authenticateAndVerifyUserMiddlewarePipeline,
     isProductIdPresent,
     checkIfProductExists
 ];

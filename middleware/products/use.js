@@ -2,7 +2,7 @@ const httpStatus = require('http-status-codes')
 const chalk = require("chalk");
 
 const Product = require('../../data/models/product')
-const authenticateUserMiddlewarePipeline = require('../../middleware/users/authenticate');
+const {authenticateAndVerifyUserMiddlewarePipeline} = require('../users/authenticate');
 const {isProductIdPresent} = require('./get');
 
 const checkIfProductExists = (req, res, next) => {
@@ -52,7 +52,7 @@ const ensurePredictionPropertiesArePresent = (req, res, next) => {
 }
 
 const useProductMiddlewarePipeline = [
-    ...authenticateUserMiddlewarePipeline,
+    ...authenticateAndVerifyUserMiddlewarePipeline,
     isProductIdPresent,
     checkIfProductExists,
     ensurePredictionPropertiesArePresent

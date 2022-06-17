@@ -5,6 +5,8 @@ const portNumberKey = 'PORT';
 const dicomConverterAccessToken = 'DICOM_CONVERTER_ACCESS_TOKEN';
 const fetalNetAccessToken = 'FETAL_NET_ACCESS_TOKEN';
 const babyNetAccessToken = 'BABY_NET_ACCESS_TOKEN';
+const emailUsernameKey = 'EMAIL_USERNAME';
+const emailPasswordKey = 'EMAIL_PASSWORD';
 
 module.exports = {
     mongoDbUriKey,
@@ -13,5 +15,7 @@ module.exports = {
     portNumberKey,
     dicomConverterAccessToken,
     fetalNetAccessToken,
-    babyNetAccessToken
+    babyNetAccessToken,
+    emailPasswordKey,
+    emailUsernameKey
 };

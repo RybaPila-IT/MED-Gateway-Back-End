@@ -37,9 +37,34 @@ const verifyUserToken = (req, res, next) => {
     });
 }
 
+
+const verifyUserStatus = (req, res, next) => {
+    const verifiedStatus = 'verified';
+    const {status} = req.token;
+
+    if (status === verifiedStatus) {
+        return next();
+    }
+    // If the user is not verified we do not let him through.
+    res
+        .status(httpStatus.UNAUTHORIZED)
+        .json({
+            message: 'Your account is not verified, please verify your account'
+        });
+}
+
+// TODO (radek.r) Think about better pipelines and middleware organization.
 const authenticateUserMiddlewarePipeline = [
     requireBearerAuthorization,
     verifyUserToken
 ];
 
-module.exports = authenticateUserMiddlewarePipeline;
+const authenticateAndVerifyUserMiddlewarePipeline = [
+    ...authenticateUserMiddlewarePipeline,
+    verifyUserStatus
+];
+
+module.exports = {
+    authenticateUserMiddlewarePipeline,
+    authenticateAndVerifyUserMiddlewarePipeline
+};
