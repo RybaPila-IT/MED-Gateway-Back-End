@@ -42,7 +42,8 @@ const getAllProductsSummary = (req, res, next) => {
     const projection = {
         name: 1,
         picture: 1,
-        short_description: 1
+        short_description: 1,
+        is_active: 1
     }
     const options = {}
     Product

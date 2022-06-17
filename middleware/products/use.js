@@ -18,6 +18,13 @@ const checkIfProductExists = (req, res, next) => {
                         'message': `product with id ${productId} does not exist`
                     });
             }
+            if (!product.is_active) {
+                return res
+                    .status(httpStatus.BAD_REQUEST)
+                    .json({
+                        'message': `product with id ${productId} is not active`
+                    });
+            }
             // Everything is fine, call next middleware.
             next()
         })
