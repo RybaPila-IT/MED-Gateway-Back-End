@@ -6,7 +6,7 @@ const productSchema = new mongoose.Schema({
         required: true,
         maxLength: [50, 'Product name must be shorter than 50 characters, got {VALUE} characters instead']
     },
-    picture: {
+    photo_url: {
         type: String,
         required: true,
         default: ''

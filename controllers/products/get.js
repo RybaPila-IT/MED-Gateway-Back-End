@@ -41,7 +41,7 @@ const getAllProductsSummary = (req, res, next) => {
     const filter = {}
     const projection = {
         name: 1,
-        picture: 1,
+        photo_url: 1,
         short_description: 1,
         is_active: 1
     }

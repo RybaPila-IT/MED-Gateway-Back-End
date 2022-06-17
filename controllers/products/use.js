@@ -26,14 +26,18 @@ const checkResponseStatus = (res) => {
     throw new FetchResponseError(res);
 }
 
+// TODO (rade.r) Fix this
+const local = process.env['env'] === 'dev';
+
+const dicomConverterEndpointUrl = local ? 'http://localhost:8000/convert' : ' https://med-dicom-converter.herokuapp.com/convert';
 
 // TODO (radek.r) Add distinction between production and development.
 // TODO (radek.r) Move this to separate file with constants.
 const productIdToEndpointUrl = {
     // Fetal-Net.
-    '625576dda784a265d36ff314': 'http://localhost:7000/predict',
+    '625576dda784a265d36ff314': local ? 'http://localhost:7000/predict' : 'https://fetal-net-service-hsyhifhtpq-lm.a.run.app/predict',
     // Baby-Net, which is not supported yet.
-    '6256a8a79bceb35be10e391e': 'http://localhost:1000/'
+    '6256a8a79bceb35be10e391e': local ?'http://localhost:1000/predict' : 'unspecified'
 }
 
 
@@ -58,7 +62,7 @@ const convertImageData = async (req, res, next) => {
     const token = process.env[dicomConverterAccessToken]
     try {
         const convertResp = checkResponseStatus(
-            await fetch('http://localhost:8000/convert', {
+            await fetch(dicomConverterEndpointUrl, {
                 method: 'post',
                 body: JSON.stringify(data),
                 headers: {
@@ -107,7 +111,7 @@ const makePrediction = async (req, res, next) => {
         res
             .status(httpStatus.INTERNAL_SERVER_ERROR)
             .json({
-                message: `Product ${productId}: ${err.message}`
+                message: `Making prediction for product ${productId}: ${err.message}`
             });
     }
 }
