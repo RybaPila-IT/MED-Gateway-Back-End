@@ -1,4 +1,7 @@
 const mongoose = require('mongoose');
+const {
+    DuplicateKeyError
+} = require('./error');
 
 const userSchema = new mongoose.Schema({
         name: {
@@ -28,7 +31,8 @@ const userSchema = new mongoose.Schema({
             required: true,
             maxLength: [100, 'Organization cannot be longer than 100 characters, got {VALUE} instead']
         },
-        // TODO (radek.r) Change this into boolean variable.
+        // Status is left as a String, since it may be further used for blocking
+        // the users or other stuff.
         status: {
             type: String,
             required: true,
@@ -37,19 +41,6 @@ const userSchema = new mongoose.Schema({
                 message: '{VALUE} is not supported user status option'
             },
             default: 'unverified'
-        },
-        permission: {
-            type: String,
-            required: true,
-            enum: {
-                values: ['user', 'admin'],
-                message: '{VALUE} is not supported user permission type'
-            },
-            default: 'user'
-        },
-        picture: {
-            type: String,
-            default: ''
         },
         last_login: {
             type: Date,
@@ -69,9 +60,11 @@ userSchema.post('save', (err, doc, next) => {
     const duplicateKeyErrorCode = 11000;
     const mongoServerError = 'MongoServerError';
     if (err.name === mongoServerError && err.code === duplicateKeyErrorCode) {
-        return next(new Error('email address conflict; provided email is already in use'));
+        return next(
+            new DuplicateKeyError('email address conflict; provided email is already in use')
+        );
     }
-    next();
+    next(err);
 });
 
 module.exports = userSchema;

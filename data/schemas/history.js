@@ -47,6 +47,7 @@ const historySchema = new mongoose.Schema({
         default: []
     }
 });
+
 // We will often search by the product and user id throughout the history.
 historySchema.index({product_id: 1, user_id: 1}, {unique: true});
 
