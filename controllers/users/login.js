@@ -1,12 +1,84 @@
 const httpStatus = require('http-status-codes');
 const jwt = require('jsonwebtoken');
-const {jwtSecretKey} = require('../../suppliers/constants');
+const log = require('npmlog');
+const bcrypt = require('bcrypt');
 
-const loginUserMiddlewarePipeline = require('../../middleware/users/login');
-const chalk = require("chalk");
+const EnvKeys = require('../../env/keys');
+const User = require('../../data/models/user');
 
-const authenticateUserWithToken = (req, res, next) => {
-    const jwtSecret = process.env[jwtSecretKey];
+const requireLoginData = (req, res, next) => {
+    const {email, password} = req.body;
+    const userProperties = [
+        {prop: email, propName: 'Email'},
+        {prop: password, propName: 'Password'}
+    ];
+    userProperties.forEach(({prop, propName}) => {
+        if (!prop) {
+            return res
+                .status(httpStatus.BAD_REQUEST)
+                .json({
+                    message: `${propName} was not provided, unable to login`
+                });
+        }
+    });
+    req.email = email;
+    req.password = password;
+    next();
+}
+
+const fetchUserModelByEmail = (req, res, next) => {
+    const {email} = req;
+    User.findOne({email}, (err, user) => {
+        if (err) {
+            log.log('error', 'LOGIN', 'Error in fetchUserModelByEmail:', err.message);
+            return res
+                .status(httpStatus.INTERNAL_SERVER_ERROR)
+                .json({
+                    message: 'Error while fetching user model from database'
+                });
+        }
+        if (!user) {
+            log.log('info', 'LOGIN', 'Attempt to login with email not present in database; email:', email);
+            return res
+                .status(httpStatus.UNAUTHORIZED)
+                .json({
+                    message: 'Credentials mismatch'
+                });
+        }
+        // Store the object, not the whole model.
+        req.user = user['_doc'];
+        next();
+    })
+}
+
+const verifyUserPassword = (req, res, next) => {
+    const {password: providedPassword} = req;
+    const {password: originalPassword} = req.user;
+    bcrypt.compare(providedPassword, originalPassword, (err, match) => {
+        if (err) {
+            log.log('error', 'LOGIN', 'Error in verifyUserPassword:', err.message);
+            return res
+                .status(httpStatus.INTERNAL_SERVER_ERROR)
+                .json({
+                    message: 'Error while checking the password'
+                });
+        }
+        if (!match) {
+            const {_id, name, surname} = req.user;
+            log.log('info', 'LOGIN', 'Invalid credentials for user', name, surname, _id.toString());
+            return res
+                .status(httpStatus.UNAUTHORIZED)
+                .json({
+                    message: 'Credentials mismatch'
+                });
+        }
+        next();
+    })
+}
+
+
+const createToken = (req, res, next) => {
+    const jwtSecret = process.env[EnvKeys.jwtSecret];
     const options = {expiresIn: '2h'};
     const payload = (
         ({_id, status, permission}) => {
@@ -16,43 +88,62 @@ const authenticateUserWithToken = (req, res, next) => {
 
     jwt.sign(payload, jwtSecret, options, (err, token) => {
         if (err) {
-            console.log(chalk.red('error: signing a token:', err.message));
-            res.status(httpStatus.INTERNAL_SERVER_ERROR);
-            return next(new Error('error: logging in'));
+            log.log('error', 'LOGIN', 'Error in createToken:', err.message);
+            return res
+                .status(httpStatus.INTERNAL_SERVER_ERROR)
+                .json({
+                    message: 'Error while creating the token for user'
+                });
         }
-        req['token'] = token;
-        req['payload'] = payload;
+        req.token = token;
         next();
     });
 }
 
 const updateUserLastLogin = (req, res, next) => {
-    const {user: User} = req;
+    const {_id} = req.user;
+    const update = {last_login: Date.now()};
+
     User
-        .updateOne({last_login: Date.now()})
-        .then(() => {
-            next()
+        .findByIdAndUpdate(_id, update)
+        .then(_ => {
+            next();
         })
         .catch(err => {
-            console.log(chalk.red('error: updating user model', err.message));
-            res.statusCode(httpStatus.INTERNAL_SERVER_ERROR);
-            next(new Error('error: updating user model'));
-        })
+            log.log('error', 'LOGIN', 'Error in updateUserLastLogin:', err.message);
+            return res
+                .status(httpStatus.INTERNAL_SERVER_ERROR)
+                .json({
+                    message: 'Error while updating internal info about user'
+                });
+        });
 }
 
 const sendResponse = (req, res) => {
-    const {token, payload} = req;
-    res.status(httpStatus.OK).json({
-        ...payload,
-        token
-    });
+    const {token} = req;
+    res
+        .status(httpStatus.OK)
+        .json({
+            token
+        });
 }
 
 const loginUser = [
-    ...loginUserMiddlewarePipeline,
-    authenticateUserWithToken,
+    requireLoginData,
+    fetchUserModelByEmail,
+    verifyUserPassword,
+    createToken,
     updateUserLastLogin,
     sendResponse
 ];
 
-module.exports = loginUser;
+module.exports = {
+    loginUser,
+    // Exporting single functions for testing purposes.
+    requireLoginData,
+    fetchUserModelByEmail,
+    verifyUserPassword,
+    createToken,
+    updateUserLastLogin,
+    sendResponse
+};
