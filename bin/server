@@ -16,6 +16,6 @@ log.enableColor();
 // After we set up the connection we start the app.
 dbConnect(_ => {
     app.listen(port, _ => {
-        log.log('info', 'Start', `Listening on port ${port}`);
+        log.log('info', 'Start', 'Listening on port', port);
     });
 });
