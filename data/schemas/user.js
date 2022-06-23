@@ -42,10 +42,6 @@ const userSchema = new mongoose.Schema({
             },
             default: 'unverified'
         },
-        last_login: {
-            type: Date,
-            default: Date.now()
-        }
     },
     {
         timestamps: {

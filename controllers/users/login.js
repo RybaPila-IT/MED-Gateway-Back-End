@@ -100,25 +100,6 @@ const createToken = (req, res, next) => {
     });
 }
 
-const updateUserLastLogin = (req, res, next) => {
-    const {_id} = req.user;
-    const update = {last_login: Date.now()};
-
-    User
-        .findByIdAndUpdate(_id, update)
-        .then(_ => {
-            next();
-        })
-        .catch(err => {
-            log.log('error', 'LOGIN', 'Error in updateUserLastLogin:', err.message);
-            return res
-                .status(httpStatus.INTERNAL_SERVER_ERROR)
-                .json({
-                    message: 'Error while updating internal info about user'
-                });
-        });
-}
-
 const sendResponse = (req, res) => {
     const {token} = req;
     res
@@ -133,7 +114,6 @@ const loginUser = [
     fetchUserModelByEmail,
     verifyUserPassword,
     createToken,
-    updateUserLastLogin,
     sendResponse
 ];
 
@@ -144,6 +124,5 @@ module.exports = {
     fetchUserModelByEmail,
     verifyUserPassword,
     createToken,
-    updateUserLastLogin,
     sendResponse
 };
