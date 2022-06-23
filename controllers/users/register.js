@@ -1,103 +1,111 @@
 const httpStatus = require('http-status-codes');
-const chalk = require('chalk');
+const bcrypt = require('bcrypt');
+const log = require('npmlog');
 
-const {transporter, defaultOptions} = require('../../mail/transporter');
-const registerUserMiddlewarePipeline = require('../../middleware/users/register');
 const User = require('../../data/models/user');
-const Verification = require('../../data/models/verification');
+const {
+    DuplicateKeyError
+} = require('../../data/schemas/error');
+const {
+    createVerification,
+    sendVerificationEmail
+} = require('../verification/send')
 
-const tryRegisterUser = (req, res, next) => {
-    const {
-        name,
-        surname,
-        email,
-        password,
-        organization
-    } = req.body;
 
-    User
-        .create({
-            name,
-            surname,
-            email,
-            password,
-            organization
-        })
-        .then(createdUser => {
-            req.user_id = createdUser['_doc']['_id'];
-            req.email = createdUser['_doc']['email'];
-            next();
-        })
-        .catch(err => {
-            console.log(chalk.red('error: creating the user:', err.message));
-            res.status(httpStatus.CONFLICT)
-            next(new Error(`error: creating user: ${err.message}`));
-        })
+const requireRegisterData = (req, res, next) => {
+    const {name, surname, email, password, organization} = req.body;
+    const userProperties = [
+        {prop: name, propName: 'Name'},
+        {prop: surname, propName: 'Surname'},
+        {prop: email, propName: 'Email'},
+        {prop: password, propName: 'Password'},
+        {prop: organization, propName: 'Organization'},
+    ];
+    userProperties.forEach(({prop, propName}) => {
+        if (!prop) {
+            return res
+                .status(httpStatus.BAD_REQUEST)
+                .json({
+                    message: `${propName} was not provided but is necessary to register the user`
+                });
+        }
+    })
+    next();
 }
 
-
-const generateVerificationEntry = (req, res, next) => {
-    const {user_id} = req;
-
-    Verification
-        .create({
-            user_id
-        })
-        .then(ver => {
-            req.ver_id = ver['_doc']['_id'];
-            next();
-        })
-        .catch(err => {
-            console.log(chalk.red('error: creating verification entry:', err.message));
-            next(new Error('error: creating verification entry'));
-        })
-}
-
-
-const sendVerificationEmail = (req, res, next) => {
-
-    const {
-        email: receiver,
-        ver_id: verificationId
-    } = req;
-
-    const link = `http://localhost:5000/api/verify/${verificationId}`;
-
-    const options = {
-        ...defaultOptions,
-        to: receiver,
-        subject: 'Account verification',
-        text: `Welcome to MED-Gateway System!\n\nIn order to verify the account please visit this link: ${link}`
-    };
-
-    transporter
-        .sendMail(options)
-        .then(() => {
-            next();
-        })
-        .catch(err => {
-            console.log(chalk.red('error: sending the verification email', err.message));
-            res
+const genSalt = (req, res, next) => {
+    const genSaltRounds = 10;
+    bcrypt.genSalt(genSaltRounds, (err, salt) => {
+        if (err) {
+            log.log('error', 'REGISTER', 'Error in genSalt:', err.message);
+            return res
                 .status(httpStatus.INTERNAL_SERVER_ERROR)
                 .json({
-                    message: `Unable to send verification email. Error: ${err.message}`
+                    message: 'Error while protecting user password'
+                })
+        }
+        req.salt = salt;
+        next();
+    })
+}
+
+const hashPassword = (req, res, next) => {
+    const {password} = req.body;
+    const {salt} = req;
+    bcrypt.hash(password, salt, (err, encrypted) => {
+        if (err) {
+            log.log('error', 'REGISTER', 'Error in hashPassword:', err.message);
+            return res
+                .status(httpStatus.INTERNAL_SERVER_ERROR)
+                .json({
+                    message: 'Error while protecting user password'
+                })
+        }
+        req.body.password = encrypted;
+        next();
+    })
+}
+
+const createUser = (req, res, next) => {
+    const {name, surname, email, password, organization} = req.body;
+    User
+        .create({name, surname, email, password, organization})
+        .then(user => {
+            req.user = user['_doc'];
+            next();
+        })
+        .catch(err => {
+            if (err instanceof DuplicateKeyError) {
+                log.log('error', 'REGISTER', 'Registered user will cause a duplication; error:', err.message);
+                return res
+                    .status(httpStatus.CONFLICT)
+                    .message({
+                        message: `Unable to register: ${err.message}`
+                    });
+            }
+            log.log('error', 'REGISTER', 'Error at tryRegisterUser:', err.message);
+            return res
+                .status(httpStatus.INTERNAL_SERVER_ERROR)
+                .message({
+                    message: 'Unable to register user due to internal error'
                 });
-        });
+        })
 }
 
 const sendResponse = (req, res) => {
     res
         .status(httpStatus.CREATED)
         .json({
-            _id: req.user_id,
             message: 'Your account has been created, please verify the account in order to use all functionalities'
         });
 }
 
 const registerUser = [
-    ...registerUserMiddlewarePipeline,
-    tryRegisterUser,
-    generateVerificationEntry,
+    requireRegisterData,
+    genSalt,
+    hashPassword,
+    createUser,
+    createVerification,
     sendVerificationEmail,
     sendResponse
 ];

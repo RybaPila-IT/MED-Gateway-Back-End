@@ -2,7 +2,7 @@ const express = require('express')
 const router = express.Router();
 
 const {verifyUser} = require('../controllers/verification/verify');
-const {resendVerification} = require('../controllers/verification/resend');
+const {resendVerification} = require('../controllers/verification/send');
 
 router.get('/:verifyId', ...verifyUser);
 router.post('/resend', ...resendVerification);
