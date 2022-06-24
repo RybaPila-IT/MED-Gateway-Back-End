@@ -89,7 +89,7 @@ const sendResponse = (req, res) => {
         })
 }
 
-const resendVerification = [
+const sendVerificationMail = [
     requireVerificationData,
     fetchUserModelByEmail,
     createVerification,
@@ -98,7 +98,7 @@ const resendVerification = [
 ];
 
 module.exports = {
-    resendVerification,
+    sendVerificationMail,
     // Exporting single functions for testing purposes.
     requireVerificationData,
     createVerification,

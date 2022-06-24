@@ -1,19 +1,16 @@
 const nodemailer = require('nodemailer');
-const {
-    emailUsernameKey,
-    emailPasswordKey
-} = require('../suppliers/constants')
+const EnvKeys = require('../env/keys');
 
 const transporter = nodemailer.createTransport({
     service: 'Outlook365',
     auth: {
-        user: process.env[emailUsernameKey],
-        pass: process.env[emailPasswordKey]
+        user: process.env[EnvKeys.emailUsername],
+        pass: process.env[EnvKeys.emailPassword]
     }
 });
 
 const defaultOptions = {
-    from: process.env[emailUsernameKey],
+    from: process.env[EnvKeys.emailUsername],
 }
 
 module.exports = {

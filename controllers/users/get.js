@@ -1,8 +1,10 @@
 const httpStatus = require('http-status-codes');
-const chalk = require("chalk");
+const log = require('npmlog');
 
 const User = require('../../data/models/user');
-const {authenticateUserMiddlewarePipeline} = require('../../middleware/users/authenticate');
+const {
+    userIsAuthenticated
+} = require('../../middleware/authenticate');
 
 const getUserData = (req, res, next) => {
     const {_id} = req.token;
@@ -17,21 +19,45 @@ const getUserData = (req, res, next) => {
     User
         .findById(_id, projection)
         .then(user => {
-            res
-                .status(httpStatus.OK)
-                .json({
-                    ...user['_doc']
-                });
+            if (!user) {
+                log.log('warning', 'GET USER', 'Obtained token with user id', _id, 'which was not found in database');
+                return res
+                    .status(httpStatus.BAD_REQUEST)
+                    .json({
+                        message: ''
+                    })
+            }
+            req.user = user['_doc'];
+            next();
         })
         .catch(err => {
-            console.log(chalk.red('error: fetching user model with valid token', err.message));
-            return next(new Error('error: login attempt performed with valid token failed'));
+            log.log('error', 'GET USER', 'Error at getUserData:', err.message);
+            res
+                .status(httpStatus.INTERNAL_SERVER_ERROR)
+                .json({
+                    message: 'Internal error while collecting user data'
+                });
         })
 }
 
+
+const sendResponse = (req, res) => {
+    res
+        .status(httpStatus.OK)
+        .json({
+            ...req.user
+        });
+}
+
 const getUser = [
-    ...authenticateUserMiddlewarePipeline,
-    getUserData
+    ...userIsAuthenticated,
+    getUserData,
+    sendResponse
 ];
 
-module.exports = getUser;
+module.exports = {
+    getUser,
+    // Export single functions for testing purposes.
+    getUserData,
+    sendResponse
+};

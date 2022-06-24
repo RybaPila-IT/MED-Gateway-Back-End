@@ -110,4 +110,11 @@ const registerUser = [
     sendResponse
 ];
 
-module.exports = registerUser;
+module.exports = {
+    registerUser,
+    // Export single functions for testing purposes.
+    genSalt,
+    hashPassword,
+    createUser,
+    sendResponse
+};
