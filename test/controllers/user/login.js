@@ -34,10 +34,13 @@ const mongoose = require('mongoose');
 const {MongoMemoryServer} = require('mongodb-memory-server');
 const log = require('npmlog');
 const User = require('../../../data/models/user');
+const EnvKeys = require('../../../env/keys');
 const {
     requireLoginData,
     fetchUserModelByEmail,
-    verifyUserPassword
+    verifyUserPassword,
+    createToken,
+    sendResponse
 } = require('../../../controllers/users/login')
 
 // Turn off logging for tests.
@@ -171,7 +174,8 @@ describe('Test user login controller', function () {
                 surname: 'hello',
                 organization: 'test',
                 email: 'sample@email',
-                password: hashedPassword
+                password: hashedPassword,
+                status: 'verified'
             };
             let nextCalled = false;
             // Preparing the request
@@ -201,7 +205,8 @@ describe('Test user login controller', function () {
                 surname: 'hello',
                 organization: 'test',
                 email: 'sample@email',
-                password: hashedPassword
+                password: hashedPassword,
+                status: 'verified'
             };
             let nextCalled = false;
             // Prepare the request.
@@ -219,6 +224,39 @@ describe('Test user login controller', function () {
         });
 
 
+    });
+
+    describe('Test create token', function () {
+
+        it('Should create token and place it in req', function(done) {
+            const {req, res} = httpMocks.createMocks();
+            const user = {
+                _id: '123',
+                name: 'name',
+                surname: 'hello',
+                organization: 'test',
+                email: 'sample@email',
+                password: 'password',
+                status: 'verified'
+            };
+            // Preparing the request
+            req.user = user;
+
+            createToken(req, res, function () {
+                expect(req).to.have.property('token');
+                // Check the token
+                const verified = jwt.verify(req.token, process.env[EnvKeys.jwtSecret]);
+
+                expect(verified).to.have.property('_id');
+                expect(verified).to.have.property('status');
+                expect(verified._id).to.equal(user._id);
+                expect(verified.status).to.equal(user.status);
+
+                done();
+            })
+
+
+        });
     });
 
 

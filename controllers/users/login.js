@@ -87,23 +87,23 @@ const createToken = (req, res, next) => {
     const jwtSecret = process.env[EnvKeys.jwtSecret];
     const options = {expiresIn: '2h'};
     const payload = (
-        ({_id, status, permission}) => {
-            return {_id, status, permission}
+        ({_id, status}) => {
+            return {_id, status}
         }
     )(req.user);
-
-    jwt.sign(payload, jwtSecret, options, (err, token) => {
-        if (err) {
-            log.log('error', 'LOGIN', 'Error in createToken:', err.message);
-            return res
-                .status(httpStatus.INTERNAL_SERVER_ERROR)
-                .json({
-                    message: 'Error while creating the token for user'
-                });
-        }
-        req.token = token;
-        next();
-    });
+    let token = undefined;
+    try {
+        token = jwt.sign(payload, jwtSecret, options);
+    } catch (err) {
+        log.log('error', 'LOGIN', 'Error in createToken:', err.message);
+        return res
+            .status(httpStatus.INTERNAL_SERVER_ERROR)
+            .json({
+                message: 'Error while creating the token for user'
+            });
+    }
+    req.token = token;
+    next();
 }
 
 const sendResponse = (req, res) => {
