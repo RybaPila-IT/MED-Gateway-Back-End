@@ -4,8 +4,8 @@ const log = require('npmlog');
 const EnvKeys = require('../env/keys');
 
 function setUpConnection(callback = _ => {}) {
-    const mongoURL = process.env[EnvKeys.mongoDbUri];
-    mongoose.connect(mongoURL)
+    const mongoURI = process.env[EnvKeys.mongoDbUri];
+    mongoose.connect(mongoURI)
         .then(_ => {
             // Setting up listeners for mongoose events.
             mongoose.connection.on('error', err => {
