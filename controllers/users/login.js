@@ -26,29 +26,31 @@ const requireLoginData = (req, res, next) => {
     next();
 }
 
-const fetchUserModelByEmail = (req, res, next) => {
+const fetchUserModelByEmail = async (req, res, next) => {
     const {email} = req;
-    User.findOne({email}, (err, user) => {
-        if (err) {
-            log.log('error', 'LOGIN', 'Error in fetchUserModelByEmail:', err.message);
-            return res
-                .status(httpStatus.INTERNAL_SERVER_ERROR)
-                .json({
-                    message: 'Error while fetching user model from database'
-                });
-        }
-        if (!user) {
-            log.log('info', 'LOGIN', 'Attempt to login with email not present in database; email:', email);
-            return res
-                .status(httpStatus.UNAUTHORIZED)
-                .json({
-                    message: 'Credentials mismatch'
-                });
-        }
-        // Store the object, not the whole model.
-        req.user = user['_doc'];
-        next();
-    })
+    let user = undefined;
+    try {
+        user = await User.findOne({email});
+    } catch (err) {
+        log.log('error', 'LOGIN', 'Error in fetchUserModelByEmail:', err.message);
+        return res
+            .status(httpStatus.INTERNAL_SERVER_ERROR)
+            .json({
+                message: 'Error while fetching user model from database'
+            });
+    }
+    // Continue after user fetching.
+    if (!user) {
+        log.log('info', 'LOGIN', 'Attempt to login with email not present in database; email:', email);
+        return res
+            .status(httpStatus.UNAUTHORIZED)
+            .json({
+                message: 'Credentials mismatch'
+            });
+    }
+    // Store the object, not the whole model.
+    req.user = user['_doc'];
+    next();
 }
 
 const verifyUserPassword = (req, res, next) => {

@@ -40,13 +40,13 @@ const {
 } = require('../../../controllers/users/login')
 
 // Turn off logging for tests.
-log.level = log.levels.silent;
+log.pause();
 
 let mongoServer = undefined;
 
 describe('Test user login controller', function () {
 
-    before(async function() {
+    before(async function () {
         mongoServer = await MongoMemoryServer.create();
         await mongoose.connect(
             mongoServer.getUri()
@@ -60,7 +60,6 @@ describe('Test user login controller', function () {
             const passwordValue = 'password';
 
             const {req, res} = httpMocks.createMocks({
-                method: 'POST',
                 body: {
                     email: emailValue,
                     password: passwordValue
@@ -94,12 +93,10 @@ describe('Test user login controller', function () {
                 const reqBody = {...body}
                 delete reqBody[key]
                 // Actual test starts here.
-                const {req, res} = httpMocks.createMocks({
-                    method: 'POST',
-                    body: reqBody
-                }, {});
+                const {req, res} = httpMocks.createMocks({body: reqBody}, {});
 
-                requireLoginData(req, res, _ => {});
+                requireLoginData(req, res, function () {
+                });
 
                 expect(res._getStatusCode()).to.equal(httpStatus.BAD_REQUEST);
                 expect(res._isJSON()).to.be.true;
@@ -113,7 +110,7 @@ describe('Test user login controller', function () {
     });
 
     describe('Test fetch user model by email', function () {
-        before(async function() {
+        before(async function () {
             await User.create({
                 name: 'name',
                 surname: 'surname',
@@ -124,15 +121,44 @@ describe('Test user login controller', function () {
             });
         });
 
+        it('Should respond with UNAUTHORIZED and have "message" field in JSON res', async function () {
+            const {req, res} = httpMocks.createMocks();
+            // Set email field in req since fetchUserModelByEmail uses it.
+            req.email = 'some_other@email';
+            await fetchUserModelByEmail(req, res, function () {
+            });
+
+            expect(res._getStatusCode()).to.equal(httpStatus.UNAUTHORIZED);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.have.property('message');
+        });
+
+        it('Should set user object in req', async function() {
+            const {req, res} = httpMocks.createMocks();
+            // Set email field in req since fetchUserModelByEmail uses it.
+            req.email = 'some@email';
+            await fetchUserModelByEmail(req, res, function () {
+            });
+
+            expect(req).to.have.property('user');
+            expect(req.user).to.include({
+                name: 'name',
+                surname: 'surname',
+                email: 'some@email',
+                password: 'password',
+                organization: 'org',
+                status: 'verified'
+            });
+        });
 
 
-        after(async function() {
+        after(async function () {
             await User.deleteOne({email: 'some@email'});
         });
     })
 
 
-    after(async function() {
+    after(async function () {
         await mongoose.disconnect();
         await mongoServer.stop();
     });
