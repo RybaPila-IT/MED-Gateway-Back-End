@@ -1,34 +1,11 @@
 require('dotenv').config()
 
-const express = require('express');
 const httpStatus = require('http-status-codes');
 const jwt = require('jsonwebtoken');
-const chaiHttp = require('chai-http');
 const chai = require('chai');
 const bcrypt = require('bcrypt');
 const expect = chai.expect;
 const assert = chai.assert;
-
-chai.use(chaiHttp);
-
-const {mongoDbTestUriKey, jwtSecretKey} = require('../../../suppliers/constants');
-const setUpMongooseConnection = require('../../../data/connection');
-const loginUser = require('../../../controllers/users/login');
-
-// const server = express();
-//
-// server.use(express.json());
-// server.use(express.urlencoded({extended: false}));
-//
-// server.post('/api/users/login', loginUser)
-//
-// const handleError = (err, req, res) => {
-//     res.json({message: err.message});
-// }
-//
-// server.use(handleError);
-
-
 const httpMocks = require('node-mocks-http');
 const mongoose = require('mongoose');
 const {MongoMemoryServer} = require('mongodb-memory-server');
@@ -228,7 +205,7 @@ describe('Test user login controller', function () {
 
     describe('Test create token', function () {
 
-        it('Should create token and place it in req', function(done) {
+        it('Should create token and place it in req', function (done) {
             const {req, res} = httpMocks.createMocks();
             const user = {
                 _id: '123',
@@ -254,92 +231,32 @@ describe('Test user login controller', function () {
 
                 done();
             })
-
-
         });
     });
 
+    describe('Test send response', function () {
+
+        it('Should send a valid response', function (done) {
+
+            const token = 'token';
+            const {req, res} = httpMocks.createMocks();
+            // Preparing the request.
+            req.token = token
+
+            sendResponse(req, res);
+
+            expect(res._getStatusCode()).to.equal(httpStatus.OK);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.have.property('token');
+            expect(res._getJSONData()).to.include({token});
+            done();
+
+        });
+    });
 
     after(async function () {
         await mongoose.disconnect();
         await mongoServer.stop();
     });
 
-})
-
-
-// suite('Test user login controller', function () {
-//
-//     suiteSetup(function (done) {
-//         setUpMongooseConnection(mongoDbTestUriKey, () => {
-//
-//             const salt = bcrypt.genSaltSync(10);
-//
-//             User
-//                 .create({
-//                     name: 'sample',
-//                     surname: 'sample',
-//                     email: 'email',
-//                     password: bcrypt.hashSync('password', salt),
-//                     organization: 'sample',
-//                     last_login: new Date(2022, 1, 12, 12, 0, 0, 0)
-//                 })
-//                 .then(() => {
-//                     done();
-//                 })
-//                 .catch(done)
-//
-//         })
-//     })
-//
-//     test('Correct login request', async function () {
-//         const res = await chai
-//             .request(server)
-//             .post('/api/users/login')
-//             .type('json')
-//             .send({
-//                 email: 'email',
-//                 password: 'password'
-//             })
-//
-//         expect(res).to.have.status(httpStatus.OK);
-//         expect(res).to.be.json;
-//
-//         const {body} = res;
-//
-//         expect(body).to.have.property('_id');
-//         expect(body).to.have.property('status');
-//         expect(body).to.have.property('permission');
-//         expect(body).to.have.property('token');
-//
-//         assert.strictEqual(body.status, 'unverified');
-//         assert.strictEqual(body.permission, 'user');
-//
-//         try {
-//             // Below WebStorm complained about wrong signature, but I used
-//             // 'verify' correctly in a synchronous way.
-//             // noinspection JSCheckFunctionSignatures
-//             const payload = jwt.verify(body.token, process.env[jwtSecretKey]);
-//             assert.strictEqual(payload._id, body._id);
-//             assert.strictEqual(payload.status, body.status);
-//             assert.strictEqual(payload.permission, body.permission);
-//         } catch (err) {
-//             assert.fail(`unexpected error: ${err.message}`);
-//         }
-//
-//         // Check whether last login field has been updated correctly.
-//         const {_id} = body;
-//         const user = await User.findById(_id);
-//         const dateMilliseconds = new Date(user['last_login']).getTime();
-//         const nowMilliseconds = Date.now();
-//         // Assuming that both dates may differ by at most 1s.
-//         const delta = 1000;
-//         assert.approximately(dateMilliseconds, nowMilliseconds, delta);
-//     })
-//
-//     suiteTeardown(async function () {
-//         await User.deleteMany({})
-//         await mongoose.connection.close();
-//     })
-//})
-
+});
