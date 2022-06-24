@@ -8,7 +8,9 @@ const expect = chai.expect;
 const assert = chai.assert;
 const httpMocks = require('node-mocks-http');
 const mongoose = require('mongoose');
-const {MongoMemoryServer} = require('mongodb-memory-server');
+const {
+    MongoMemoryServer
+} = require('mongodb-memory-server');
 const log = require('npmlog');
 const User = require('../../../data/models/user');
 const EnvKeys = require('../../../env/keys');
@@ -18,7 +20,7 @@ const {
     verifyUserPassword,
     createToken,
     sendResponse
-} = require('../../../controllers/users/login')
+} = require('../../../controllers/user/login')
 
 // Turn off logging for tests.
 log.pause();

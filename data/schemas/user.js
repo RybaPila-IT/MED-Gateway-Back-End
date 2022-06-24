@@ -32,7 +32,7 @@ const userSchema = new mongoose.Schema({
             maxLength: [100, 'Organization cannot be longer than 100 characters, got {VALUE} instead']
         },
         // Status is left as a String, since it may be further used for blocking
-        // the users or other stuff.
+        // the user or other stuff.
         status: {
             type: String,
             required: true,

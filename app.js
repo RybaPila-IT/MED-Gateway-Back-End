@@ -6,7 +6,7 @@ const logger = require('morgan');
 const cors = require('cors');
 
 const indexRouter = require('./routes/index');
-const usersRouter = require('./routes/users');
+const userRouter = require('./routes/user');
 const productsRouter = require('./routes/products');
 const historyRouter = require('./routes/history');
 const verificationRouter = require('./routes/verification');
@@ -29,7 +29,7 @@ app.use(
 
 // Endpoints config.
 app.use('/', indexRouter);
-app.use('/api/users', usersRouter);
+app.use('/api/user', userRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/history', historyRouter);
 app.use('/api/verify', verificationRouter);

@@ -9,7 +9,7 @@ const {
 } = require('../../mail/transporter');
 const {
     fetchUserModelByEmail
-} = require('../users/login');
+} = require('../user/login');
 
 
 const requireVerificationData = (req, res, next) => {

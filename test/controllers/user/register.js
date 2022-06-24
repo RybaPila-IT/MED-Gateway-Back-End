@@ -12,7 +12,7 @@
 //
 // const {mongoDbTestUriKey} = require('../../../suppliers/constants');
 // const setUpMongooseConnection = require('../../../data/connection');
-// const registerUser = require('../../../controllers/users/register');
+// const registerUser = require('../../../controllers/user/register');
 // const User = require('../../../data/models/user');
 // const mongoose = require("mongoose");
 //
@@ -21,7 +21,7 @@
 // server.use(express.json());
 // server.use(express.urlencoded({extended: false}));
 //
-// server.post('/api/users/register', ...registerUser)
+// server.post('/api/user/register', ...registerUser)
 //
 // //noinspection JSUnusedLocalSymbols
 // const handleError = (err, req, res, next) => {
@@ -49,7 +49,7 @@
 //
 //         const res = await chai
 //             .request(server)
-//             .post('/api/users/register')
+//             .post('/api/user/register')
 //             .type('json')
 //             .send(requestData)
 //
@@ -85,7 +85,7 @@
 //
 //         const res = await chai
 //             .request(server)
-//             .post('/api/users/register')
+//             .post('/api/user/register')
 //             .type('json')
 //             .send(requestData)
 //
@@ -94,7 +94,7 @@
 //         // Do
 //         const errRes = await chai
 //             .request(server)
-//             .post('/api/users/register')
+//             .post('/api/user/register')
 //             .type('json')
 //             .send(requestData)
 //
