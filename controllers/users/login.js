@@ -53,29 +53,33 @@ const fetchUserModelByEmail = async (req, res, next) => {
     next();
 }
 
-const verifyUserPassword = (req, res, next) => {
+const verifyUserPassword = async (req, res, next) => {
     const {password: providedPassword} = req;
     const {password: originalPassword} = req.user;
-    bcrypt.compare(providedPassword, originalPassword, (err, match) => {
-        if (err) {
-            log.log('error', 'LOGIN', 'Error in verifyUserPassword:', err.message);
-            return res
-                .status(httpStatus.INTERNAL_SERVER_ERROR)
-                .json({
-                    message: 'Error while checking the password'
-                });
-        }
-        if (!match) {
-            const {_id, name, surname} = req.user;
-            log.log('info', 'LOGIN', 'Invalid credentials for user', name, surname, _id.toString());
-            return res
-                .status(httpStatus.UNAUTHORIZED)
-                .json({
-                    message: 'Credentials mismatch'
-                });
-        }
-        next();
-    })
+
+    let match = false;
+
+    try {
+        match = await bcrypt.compare(providedPassword, originalPassword);
+    } catch (err) {
+        log.log('error', 'LOGIN', 'Error in verifyUserPassword:', err.message);
+        return res
+            .status(httpStatus.INTERNAL_SERVER_ERROR)
+            .json({
+                message: 'Error while checking the password'
+            });
+    }
+    // Continue after bcrypt finishes
+    if (!match) {
+        const {_id, name, surname} = req.user;
+        log.log('info', 'LOGIN', 'Invalid credentials for user', name, surname, _id.toString());
+        return res
+            .status(httpStatus.UNAUTHORIZED)
+            .json({
+                message: 'Credentials mismatch'
+            });
+    }
+    next();
 }
 
 

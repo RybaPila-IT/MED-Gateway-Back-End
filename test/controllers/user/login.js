@@ -36,7 +36,8 @@ const log = require('npmlog');
 const User = require('../../../data/models/user');
 const {
     requireLoginData,
-    fetchUserModelByEmail
+    fetchUserModelByEmail,
+    verifyUserPassword
 } = require('../../../controllers/users/login')
 
 // Turn off logging for tests.
@@ -110,6 +111,7 @@ describe('Test user login controller', function () {
     });
 
     describe('Test fetch user model by email', function () {
+
         before(async function () {
             await User.create({
                 name: 'name',
@@ -133,7 +135,7 @@ describe('Test user login controller', function () {
             expect(res._getJSONData()).to.have.property('message');
         });
 
-        it('Should set user object in req', async function() {
+        it('Should set user object in req', async function () {
             const {req, res} = httpMocks.createMocks();
             // Set email field in req since fetchUserModelByEmail uses it.
             req.email = 'some@email';
@@ -151,11 +153,73 @@ describe('Test user login controller', function () {
             });
         });
 
-
         after(async function () {
             await User.deleteOne({email: 'some@email'});
         });
-    })
+    });
+
+    describe('Test verify user password', function () {
+
+        it('Should correctly verify password', async function () {
+            const originalPassword = 'password';
+            const salt = 10;
+            const hashedPassword = await bcrypt.hash(originalPassword, salt);
+            const {req, res} = httpMocks.createMocks();
+            const user = {
+                _id: '123',
+                name: 'name',
+                surname: 'hello',
+                organization: 'test',
+                email: 'sample@email',
+                password: hashedPassword
+            };
+            let nextCalled = false;
+            // Preparing the request
+            req.user = user;
+            req.password = originalPassword;
+
+            await verifyUserPassword(req, res, function () {
+                // Mark that we have been executed.
+                nextCalled = true;
+                // Checks
+                expect(res._getStatusCode()).to.equal(httpStatus.OK);
+                expect(req.user).include(user);
+            });
+
+            expect(nextCalled).to.be.true;
+        });
+
+        it('Should respond with UNAUTHORIZED with "message" field in JSON res', async function () {
+            const originalPassword = 'password';
+            const invalidPassword = 'password2';
+            const salt = 10;
+            const hashedPassword = await bcrypt.hash(originalPassword, salt);
+            const {req, res} = httpMocks.createMocks();
+            const user = {
+                _id: '123',
+                name: 'name',
+                surname: 'hello',
+                organization: 'test',
+                email: 'sample@email',
+                password: hashedPassword
+            };
+            let nextCalled = false;
+            // Prepare the request.
+            req.user = user;
+            req.password = invalidPassword;
+
+            await verifyUserPassword(req, res, function () {
+                nextCalled = true;
+            });
+
+            expect(nextCalled).to.be.false;
+            expect(res._getStatusCode()).to.equal(httpStatus.UNAUTHORIZED);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.have.property('message');
+        });
+
+
+    });
 
 
     after(async function () {
