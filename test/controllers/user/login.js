@@ -5,7 +5,6 @@ const jwt = require('jsonwebtoken');
 const chai = require('chai');
 const bcrypt = require('bcrypt');
 const expect = chai.expect;
-const assert = chai.assert;
 const httpMocks = require('node-mocks-http');
 const mongoose = require('mongoose');
 const {
@@ -55,13 +54,8 @@ describe('Test user login controller', function () {
                 expect(req).to.have.property('password');
 
                 const {email, password} = req;
-                // Properties should be strings.
-                assert.typeOf(email, 'string');
-                assert.typeOf(password, 'string');
-                //Properties should have this value.
-                assert.equal(email, emailValue);
-                assert.equal(password, passwordValue);
-
+                expect(email).to.be.string(emailValue)
+                expect(password).to.be.string(passwordValue)
                 done();
             });
         });
@@ -78,8 +72,7 @@ describe('Test user login controller', function () {
                 // Actual test starts here.
                 const {req, res} = httpMocks.createMocks({body: reqBody}, {});
 
-                requireLoginData(req, res, function () {
-                });
+                requireLoginData(req, res);
 
                 expect(res._getStatusCode()).to.equal(httpStatus.BAD_REQUEST);
                 expect(res._isJSON()).to.be.true;
@@ -109,8 +102,8 @@ describe('Test user login controller', function () {
             const {req, res} = httpMocks.createMocks();
             // Set email field in req since fetchUserModelByEmail uses it.
             req.email = 'some_other@email';
-            await fetchUserModelByEmail(req, res, function () {
-            });
+
+            await fetchUserModelByEmail(req, res);
 
             expect(res._getStatusCode()).to.equal(httpStatus.UNAUTHORIZED);
             expect(res._isJSON()).to.be.true;
@@ -119,20 +112,24 @@ describe('Test user login controller', function () {
 
         it('Should set user object in req', async function () {
             const {req, res} = httpMocks.createMocks();
+            let nextCalled = false;
             // Set email field in req since fetchUserModelByEmail uses it.
             req.email = 'some@email';
+
             await fetchUserModelByEmail(req, res, function () {
+                nextCalled = true;
+                expect(req).to.have.property('user');
+                expect(req.user).to.include({
+                    name: 'name',
+                    surname: 'surname',
+                    email: 'some@email',
+                    password: 'password',
+                    organization: 'org',
+                    status: 'verified'
+                });
             });
 
-            expect(req).to.have.property('user');
-            expect(req.user).to.include({
-                name: 'name',
-                surname: 'surname',
-                email: 'some@email',
-                password: 'password',
-                organization: 'org',
-                status: 'verified'
-            });
+            expect(nextCalled).to.be.true;
         });
 
         after(async function () {
@@ -178,7 +175,8 @@ describe('Test user login controller', function () {
             const salt = 10;
             const hashedPassword = await bcrypt.hash(originalPassword, salt);
             const {req, res} = httpMocks.createMocks();
-            const user = {
+            // Prepare the request.
+            req.user = {
                 _id: '123',
                 name: 'name',
                 surname: 'hello',
@@ -187,16 +185,10 @@ describe('Test user login controller', function () {
                 password: hashedPassword,
                 status: 'verified'
             };
-            let nextCalled = false;
-            // Prepare the request.
-            req.user = user;
             req.password = invalidPassword;
 
-            await verifyUserPassword(req, res, function () {
-                nextCalled = true;
-            });
+            await verifyUserPassword(req, res);
 
-            expect(nextCalled).to.be.false;
             expect(res._getStatusCode()).to.equal(httpStatus.UNAUTHORIZED);
             expect(res._isJSON()).to.be.true;
             expect(res._getJSONData()).to.have.property('message');

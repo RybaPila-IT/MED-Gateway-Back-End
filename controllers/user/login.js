@@ -12,15 +12,15 @@ const requireLoginData = (req, res, next) => {
         {prop: email, propName: 'Email'},
         {prop: password, propName: 'Password'}
     ];
-    userProperties.forEach(({prop, propName}) => {
-        if (!prop) {
+    for (const item of userProperties) {
+        if (!item.prop) {
             return res
                 .status(httpStatus.BAD_REQUEST)
                 .json({
-                    message: `${propName} was not provided, unable to login`
+                    message: `${item.propName} was not provided, unable to login`
                 });
         }
-    });
+    }
     req.email = email;
     req.password = password;
     next();

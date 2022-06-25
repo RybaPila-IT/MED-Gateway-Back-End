@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node bin/server",
     "dev": "nodemon bin/server",
-    "test": "mocha --color --recursive --ui tdd --require mocha-suppress-logs --timeout 5000"
+    "test": "mocha --color --recursive --ui bdd --require mocha-suppress-logs"
   },
   "dependencies": {
     "bcrypt": "^5.0.1",

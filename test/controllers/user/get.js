@@ -78,13 +78,9 @@ describe('Test get user controller', function () {
                 // Setting random _id
                 _id: new mongoose.Types.ObjectId().toString()
             };
-            let nextCalled = false;
 
-            await getUserData(req, res, function() {
-                nextCalled = true;
-            })
+            await getUserData(req, res)
 
-            expect(nextCalled).to.be.false;
             expect(res._getStatusCode()).to.equal(httpStatus.BAD_REQUEST);
             expect(res._isJSON()).to.be.true;
             expect(res._getJSONData()).to.have.property('message');
@@ -97,13 +93,9 @@ describe('Test get user controller', function () {
                 // Setting invalid _id
                 _id: 'not-a-id'
             };
-            let nextCalled = false;
 
-            await getUserData(req, res, function() {
-                nextCalled = true;
-            })
+            await getUserData(req, res)
 
-            expect(nextCalled).to.be.false;
             expect(res._getStatusCode()).to.equal(httpStatus.INTERNAL_SERVER_ERROR);
             expect(res._isJSON()).to.be.true;
             expect(res._getJSONData()).to.have.property('message');
@@ -131,8 +123,7 @@ describe('Test get user controller', function () {
             // Setting up the req
             req.user = user;
 
-            sendResponse(req, res, function () {
-            })
+            sendResponse(req, res)
 
             expect(res._getStatusCode()).to.equal(httpStatus.OK);
             expect(res._isJSON()).to.be.true;
