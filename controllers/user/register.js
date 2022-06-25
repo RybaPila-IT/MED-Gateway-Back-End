@@ -33,20 +33,21 @@ const requireRegisterData = (req, res, next) => {
     next();
 }
 
-const genSalt = (req, res, next) => {
+const genSalt = async (req, res, next) => {
     const genSaltRounds = 10;
-    bcrypt.genSalt(genSaltRounds, (err, salt) => {
-        if (err) {
-            log.log('error', 'REGISTER', 'Error in genSalt:', err.message);
-            return res
-                .status(httpStatus.INTERNAL_SERVER_ERROR)
-                .json({
-                    message: 'Error while protecting user password'
-                })
-        }
-        req.salt = salt;
-        next();
-    })
+    let salt = undefined;
+    try {
+        salt = await bcrypt.genSalt(genSaltRounds);
+    } catch (err) {
+        log.log('error', 'REGISTER', 'Error in genSalt:', err.message);
+        return res
+            .status(httpStatus.INTERNAL_SERVER_ERROR)
+            .json({
+                message: 'Error while protecting user password'
+            });
+    }
+    req.salt = salt;
+    next();
 }
 
 const hashPassword = (req, res, next) => {

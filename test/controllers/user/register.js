@@ -85,6 +85,22 @@ describe('Test user register controller', function () {
         });
     });
 
+    describe('Test gen salt', function () {
+
+        it('Should generate salt in req', async function() {
+            const {req, res} = httpMocks.createMocks();
+            let nextCalled = false;
+
+            await genSalt(req, res, function () {
+                nextCalled = true;
+                expect(req).to.have.property('salt');
+            });
+
+            expect(nextCalled).to.be.true;
+        });
+
+    })
+
 
 
 });
