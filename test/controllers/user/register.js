@@ -1,36 +1,96 @@
-// require('dotenv').config()
-//
-// const express = require('express');
-// const httpStatus = require('http-status-codes');
-// const chaiHttp = require('chai-http');
-// const chai = require('chai');
-// const bcrypt = require('bcrypt');
-// const assert = chai.assert;
-// const expect = chai.expect;
-//
-// chai.use(chaiHttp);
-//
-// const {mongoDbTestUriKey} = require('../../../suppliers/constants');
-// const setUpMongooseConnection = require('../../../data/connection');
-// const registerUser = require('../../../controllers/user/register');
-// const User = require('../../../data/models/user');
-// const mongoose = require("mongoose");
-//
+require('dotenv').config()
+
+const express = require('express');
+const httpStatus = require('http-status-codes');
+const chaiHttp = require('chai-http');
+const chai = require('chai');
+const bcrypt = require('bcrypt');
+const assert = chai.assert;
+const expect = chai.expect;
+
+chai.use(chaiHttp);
+
+const {mongoDbTestUriKey} = require('../../../suppliers/constants');
+const setUpMongooseConnection = require('../../../data/connection');
+const registerUser = require('../../../controllers/user/register');
+const User = require('../../../data/models/user');
+const mongoose = require("mongoose");
+
 // const server = express();
 //
 // server.use(express.json());
 // server.use(express.urlencoded({extended: false}));
 //
 // server.post('/api/user/register', ...registerUser)
-//
-// //noinspection JSUnusedLocalSymbols
+
+//noinspection JSUnusedLocalSymbols
 // const handleError = (err, req, res, next) => {
 //     res.json({message: err.message});
 // }
 //
 // server.use(handleError);
-//
-//
+
+const httpMocks = require('node-mocks-http');
+const {
+    requireRegisterData,
+    genSalt,
+    hashPassword,
+    createUser,
+    sendResponse
+} = require('../../../controllers/user/register')
+
+
+describe('Test user register controller', function () {
+
+    describe('Test require register data', function () {
+
+        it('Should respond with BAD_REQUEST with "message" in JSON res', function (done) {
+            let testsLeft = 5;
+            const body = {
+                name: 'test',
+                surname: 'test',
+                email: 'some@email',
+                password: 'password',
+                organization: 'test'
+            };
+            for (const [key, _] of Object.entries(body)) {
+                const reqBody = {...body}
+                delete reqBody[key]
+                // Actual test starts here.
+                const {req, res} = httpMocks.createMocks({body: reqBody}, {});
+
+                requireRegisterData(req, res);
+
+                expect(res._getStatusCode()).to.equal(httpStatus.BAD_REQUEST);
+                expect(res._isJSON()).to.be.true;
+                expect(res._getJSONData()).to.have.property('message');
+                // Call done if no tests left.
+                if (!--testsLeft) {
+                    done();
+                }
+            }
+        });
+
+        it('Should call next and pass checks', function (done) {
+            const body = {
+                name: 'test',
+                surname: 'test',
+                email: 'some@email',
+                password: 'password',
+                organization: 'test'
+            };
+            const {req, res} = httpMocks.createMocks({body}, {});
+
+            requireRegisterData(req, res, done);
+        });
+    });
+
+
+
+});
+
+
+
 // suite('Test register user controller', function () {
 //
 //     suiteSetup(function (done) {
@@ -112,4 +172,4 @@
 //         await User.deleteMany({})
 //         await mongoose.connection.close();
 //     })
-// })
+//})

@@ -21,15 +21,15 @@ const requireRegisterData = (req, res, next) => {
         {prop: password, propName: 'Password'},
         {prop: organization, propName: 'Organization'},
     ];
-    userProperties.forEach(({prop, propName}) => {
-        if (!prop) {
+    for (const item of userProperties) {
+        if (!item.prop) {
             return res
                 .status(httpStatus.BAD_REQUEST)
                 .json({
-                    message: `${propName} was not provided but is necessary to register the user`
+                    message: `${item.propName} was not provided but is necessary to register the user`
                 });
         }
-    })
+    }
     next();
 }
 
@@ -113,6 +113,7 @@ const registerUser = [
 module.exports = {
     registerUser,
     // Export single functions for testing purposes.
+    requireRegisterData,
     genSalt,
     hashPassword,
     createUser,
