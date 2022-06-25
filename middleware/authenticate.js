@@ -19,20 +19,20 @@ const verifyUserToken = (req, res, next) => {
     // We split the string by an empty space and grab the second
     // element from received array to fetch the 'Token'.
     // At index 0, there is just the text 'Bearer'.
-    const token = req.headers.authorization.split(' ')[1];
     const jwtSecret = process.env[EnvKeys.jwtSecret];
-    jwt.verify(token, jwtSecret, {}, (err, decoded) => {
-        if (err) {
-            log.log('error', 'AUTH', 'Verifying the jwt:', err.message);
-            return res
-                .status(httpStatus.NOT_FOUND)
-                .json({
-                    message: 'Page not found'
-                });
-        }
-        req.token = decoded;
-        next();
-    });
+    let token = req.headers.authorization.split(' ')[1];
+    try {
+        token = jwt.verify(token, jwtSecret);
+    } catch (err) {
+        log.log('error', 'AUTH', 'Verifying the jwt:', err.message);
+        return res
+            .status(httpStatus.NOT_FOUND)
+            .json({
+                message: 'Page not found'
+            });
+    }
+    req.token = token;
+    next();
 }
 
 

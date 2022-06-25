@@ -35,23 +35,27 @@ chai.use(chaiHttp);
 // server.use(handleError);
 
 
+const log = require('npmlog');
 const httpMocks = require('node-mocks-http');
+const EnvKeys = require('../../env/keys');
 const {
     requireBearerAuthorization,
     verifyUserToken,
     verifyUserStatus
 } = require('../../middleware/authenticate');
 
+// Turn off logging for testing.
+log.pause();
 
 describe('Test authenticate middleware', function () {
 
     describe('Test require bearer authentication', function () {
 
-        it('Should respond with NOT_FOUND status with "message" in JSON', function (done) {
+        it('Should respond with NOT_FOUND status with "message" in JSON res', function (done) {
             // No Authorization header
             const {req, res} = httpMocks.createMocks();
             let nextCalled = false;
-            requireBearerAuthorization(req, res, function() {
+            requireBearerAuthorization(req, res, function () {
                 nextCalled = true;
             });
 
@@ -62,11 +66,11 @@ describe('Test authenticate middleware', function () {
             done();
         });
 
-        it('Should respond with NOT_FOUND status with "message" in JSON', function (done) {
+        it('Should respond with NOT_FOUND status with "message" in JSON res', function (done) {
             // No Authorization header
             const {req, res} = httpMocks.createMocks({headers: {'Authorization': 'User Password'}});
             let nextCalled = false;
-            requireBearerAuthorization(req, res, function() {
+            requireBearerAuthorization(req, res, function () {
                 nextCalled = true
             });
 
@@ -77,10 +81,38 @@ describe('Test authenticate middleware', function () {
             done();
         });
 
-        it('Should pass authorization header checking', function(done) {
+        it('Should pass authorization header checking', function (done) {
             const {req, res} = httpMocks.createMocks({headers: {'Authorization': 'Bearer token'}});
-            requireBearerAuthorization(req, res, function() {
+            requireBearerAuthorization(req, res, function () {
                 expect(res._getStatusCode()).to.equal(httpStatus.OK);
+                done();
+            });
+        });
+
+    });
+
+    describe('Test verify user token', function () {
+
+        it('Should return NOT_FOUND with "message" in JSON res', function (done) {
+            const {req, res} = httpMocks.createMocks({headers: {'Authorization': 'Bearer token'}});
+            verifyUserToken(req, res);
+
+            expect(res._getStatusCode()).to.equal(httpStatus.NOT_FOUND);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.have.property('message');
+            done();
+        });
+
+        it('Should set decoded token in req', function (done) {
+            const payload = {_id: '1', status: 'verified'};
+            const key = process.env[EnvKeys.jwtSecret];
+            const token = jwt.sign(payload, key);
+
+            const {req, res} = httpMocks.createMocks({headers: {'Authorization': `Bearer ${token}`}});
+
+            verifyUserToken(req, res, function () {
+                expect(req).to.have.property('token');
+                expect(req.token).to.include(payload);
                 done();
             });
         });
