@@ -99,6 +99,25 @@ describe('Test user register controller', function () {
             expect(nextCalled).to.be.true;
         });
 
+    });
+
+    describe('Test hash password', function () {
+
+        it('Should hash the password', async function () {
+            const originalPassword = 'password';
+            const {req, res} = httpMocks.createMocks({body: {password: originalPassword}});
+            let nextCalled = false;
+            // Preparing the request
+            req.salt = 10;
+
+            await hashPassword(req, res, function () {
+                nextCalled = true;
+                expect(req.body.password).to.not.equal(originalPassword);
+            });
+
+            expect(nextCalled).to.be.true;
+        });
+
     })
 
 

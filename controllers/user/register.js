@@ -50,21 +50,20 @@ const genSalt = async (req, res, next) => {
     next();
 }
 
-const hashPassword = (req, res, next) => {
+const hashPassword = async (req, res, next) => {
     const {password} = req.body;
     const {salt} = req;
-    bcrypt.hash(password, salt, (err, encrypted) => {
-        if (err) {
-            log.log('error', 'REGISTER', 'Error in hashPassword:', err.message);
-            return res
-                .status(httpStatus.INTERNAL_SERVER_ERROR)
-                .json({
-                    message: 'Error while protecting user password'
-                })
-        }
-        req.body.password = encrypted;
-        next();
-    })
+    try {
+        req.body.password = await bcrypt.hash(password, salt);
+    } catch (err) {
+        log.log('error', 'REGISTER', 'Error in hashPassword:', err.message);
+        return res
+            .status(httpStatus.INTERNAL_SERVER_ERROR)
+            .json({
+                message: 'Error while protecting user password'
+            });
+    }
+    next();
 }
 
 const createUser = (req, res, next) => {
