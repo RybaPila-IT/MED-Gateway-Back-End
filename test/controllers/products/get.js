@@ -1,15 +1,15 @@
-// require('dotenv').config()
-//
-// const express = require('express');
-// const mongoose = require("mongoose");
-// const httpStatus = require('http-status-codes');
-// const chaiHttp = require('chai-http');
-// const chai = require('chai');
-// const expect = chai.expect;
-// const assert = chai.assert;
-//
-// chai.use(chaiHttp);
-//
+require('dotenv').config()
+
+const express = require('express');
+const mongoose = require("mongoose");
+const httpStatus = require('http-status-codes');
+const chaiHttp = require('chai-http');
+const chai = require('chai');
+const expect = chai.expect;
+const assert = chai.assert;
+
+chai.use(chaiHttp);
+
 // const {mongoDbTestUriKey} = require('../../../suppliers/constants');
 // const setUpMongooseConnection = require('../../../data/connection');
 // const {
@@ -33,7 +33,46 @@
 // }
 //
 // server.use(handleError);
-//
+
+const log = require('npmlog');
+const httpMocks = require('node-mocks-http');
+const {
+    requireProductId,
+    validProductId,
+    getProductData,
+    getAllProductsSummary
+} = require('../../../controllers/products/get')
+
+// Turn off logging for testing
+log.pause();
+
+describe('Test get product controller', function () {
+
+    describe('Test require product id', function () {
+
+        it('Should return BAD_REQUEST with "message" in JSON res', function (done) {
+            const {req, res} = httpMocks.createMocks();
+
+            requireProductId(req, res);
+
+            expect(res._getStatusCode()).to.be.equal(httpStatus.BAD_REQUEST);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.have.property('message');
+            done();
+        });
+
+        it('Should call next', function (done) {
+           const {req, res} = httpMocks.createMocks({params: {productId: '123'}});
+
+           requireProductId(req, res, done);
+        });
+
+    });
+
+
+});
+
+
 // suite('Test get single product controller', function () {
 //
 //     let _id = 0;
