@@ -135,6 +135,7 @@ describe('Test user login controller', function () {
         after(async function () {
             await User.deleteOne({email: 'some@email'});
         });
+
     });
 
     describe('Test verify user password', function () {
@@ -193,7 +194,6 @@ describe('Test user login controller', function () {
             expect(res._isJSON()).to.be.true;
             expect(res._getJSONData()).to.have.property('message');
         });
-
 
     });
 

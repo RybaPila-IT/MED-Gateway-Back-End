@@ -1,36 +1,13 @@
 require('dotenv').config()
 
-const express = require('express');
 const httpStatus = require('http-status-codes');
-const chaiHttp = require('chai-http');
 const chai = require('chai');
-const bcrypt = require('bcrypt');
-const assert = chai.assert;
 const expect = chai.expect;
-
-chai.use(chaiHttp);
-
-const {mongoDbTestUriKey} = require('../../../suppliers/constants');
-const setUpMongooseConnection = require('../../../data/connection');
-const registerUser = require('../../../controllers/user/register');
-const User = require('../../../data/models/user');
 const mongoose = require("mongoose");
-
-// const server = express();
-//
-// server.use(express.json());
-// server.use(express.urlencoded({extended: false}));
-//
-// server.post('/api/user/register', ...registerUser)
-
-//noinspection JSUnusedLocalSymbols
-// const handleError = (err, req, res, next) => {
-//     res.json({message: err.message});
-// }
-//
-// server.use(handleError);
-
+const log = require('npmlog');
 const httpMocks = require('node-mocks-http');
+const {MongoMemoryServer} = require('mongodb-memory-server');
+const User = require('../../../data/models/user');
 const {
     requireRegisterData,
     genSalt,
@@ -39,8 +16,21 @@ const {
     sendResponse
 } = require('../../../controllers/user/register')
 
+// Stop logging for tests.
+log.pause()
+
+let mongoServer = undefined;
 
 describe('Test user register controller', function () {
+
+    before(async function () {
+        mongoServer = await MongoMemoryServer.create();
+        await mongoose.connect(
+            mongoServer.getUri()
+        );
+        // For unique index instantiating
+        await User.ensureIndexes();
+    });
 
     describe('Test require register data', function () {
 
@@ -87,7 +77,7 @@ describe('Test user register controller', function () {
 
     describe('Test gen salt', function () {
 
-        it('Should generate salt in req', async function() {
+        it('Should generate salt in req', async function () {
             const {req, res} = httpMocks.createMocks();
             let nextCalled = false;
 
@@ -118,93 +108,91 @@ describe('Test user register controller', function () {
             expect(nextCalled).to.be.true;
         });
 
-    })
+    });
 
+    describe('Test create user', function () {
 
+        before(async function () {
+            await User.create({
+                name: 'name',
+                surname: 'surname',
+                email: 'some@email',
+                password: 'password',
+                organization: 'org',
+                status: 'verified'
+            });
+        });
+
+        it('Should create user', async function () {
+            const user = {
+                name: 'name',
+                surname: 'surname',
+                email: 'some2@email',
+                password: 'password',
+                organization: 'org'
+            }
+            const {req, res} = httpMocks.createMocks({body: user});
+            let nextCalled = false;
+
+            await createUser(req, res, function () {
+                nextCalled = true;
+            });
+
+            const addedUser = await User.findOne({email: 'some2@email'});
+
+            expect(nextCalled).to.be.true;
+            expect(addedUser).not.to.be.undefined;
+            expect(addedUser['_doc']).to.include(user);
+            expect(addedUser['_doc'].status).to.be.equal('unverified');
+
+            await addedUser.remove();
+        });
+
+        it('Should return CONFLICT with "message" in JSON res', async function () {
+            const user = {
+                name: 'name',
+                surname: 'surname',
+                email: 'some@email',
+                password: 'password',
+                organization: 'org'
+            }
+            const {req, res} = httpMocks.createMocks({body: user});
+            let nextCalled = false;
+
+            await createUser(req, res, function () {
+                nextCalled = true;
+            });
+
+            expect(nextCalled).to.be.false;
+            expect(res._getStatusCode()).to.be.equal(httpStatus.CONFLICT);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.have.property('message');
+        });
+
+        after(async function () {
+            await User.deleteOne({email: 'some@email'});
+        });
+
+    });
+
+    describe('Test send response', function () {
+
+        it('Should return CREATED response with "message" in JSON res', function (done) {
+            const {req, res} = httpMocks.createMocks();
+
+            sendResponse(req, res);
+
+            expect(res._getStatusCode()).to.equal(httpStatus.CREATED);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.have.property('message');
+            done();
+        });
+
+    });
+
+    after(async function () {
+        await mongoose.disconnect();
+        await mongoServer.stop();
+    });
 
 });
-
-
-
-// suite('Test register user controller', function () {
-//
-//     suiteSetup(function (done) {
-//         setUpMongooseConnection(mongoDbTestUriKey, done);
-//     })
-//
-//     test('Valid registration request', async () => {
-//
-//         const requestData = {
-//             name: 'name',
-//             surname: 'surname',
-//             email: 'email',
-//             password: 'password',
-//             organization: 'organization'
-//         }
-//
-//         const res = await chai
-//             .request(server)
-//             .post('/api/user/register')
-//             .type('json')
-//             .send(requestData)
-//
-//         expect(res).to.have.status(httpStatus.CREATED);
-//         expect(res).to.be.json;
-//         expect(res.body).to.have.property('message');
-//         expect(res.body).to.have.property('_id');
-//
-//         const {_id} = res.body;
-//         const user = await User.findById(_id);
-//
-//         assert.isDefined(user);
-//         assert.strictEqual(user['name'], requestData['name']);
-//         assert.strictEqual(user['surname'], requestData['surname']);
-//         assert.strictEqual(user['organization'], requestData['organization']);
-//         assert.strictEqual(user['email'], requestData['email']);
-//         assert.isTrue(bcrypt.compareSync(requestData['password'], user['password']));
-//
-//         // // Clear the database after test
-//         await User.deleteOne({_id});
-//     });
-//
-//     test('Duplicate user email in database', async () => {
-//
-//         // Given
-//         const requestData = {
-//             name: 'name',
-//             surname: 'surname',
-//             email: 'email',
-//             password: 'password',
-//             organization: 'organization'
-//         }
-//
-//         const res = await chai
-//             .request(server)
-//             .post('/api/user/register')
-//             .type('json')
-//             .send(requestData)
-//
-//         expect(res).to.have.status(httpStatus.CREATED);
-//
-//         // Do
-//         const errRes = await chai
-//             .request(server)
-//             .post('/api/user/register')
-//             .type('json')
-//             .send(requestData)
-//
-//         // Expect
-//         expect(errRes).to.have.status(httpStatus.CONFLICT);
-//         expect(res).to.be.json;
-//         expect(errRes.body).to.have.property('message');
-//
-//         // // Clear the database after test
-//         const {_id} = res.body;
-//         await User.deleteOne({_id});
-//     })
-//
-//     suiteTeardown(async function() {
-//         await User.deleteMany({})
-//         await mongoose.connection.close();
-//     })
-//})

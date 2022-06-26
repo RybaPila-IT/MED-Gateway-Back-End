@@ -66,30 +66,27 @@ const hashPassword = async (req, res, next) => {
     next();
 }
 
-const createUser = (req, res, next) => {
+const createUser = async (req, res, next) => {
     const {name, surname, email, password, organization} = req.body;
-    User
-        .create({name, surname, email, password, organization})
-        .then(user => {
-            req.user = user['_doc'];
-            next();
-        })
-        .catch(err => {
-            if (err instanceof DuplicateKeyError) {
-                log.log('error', 'REGISTER', 'Registered user will cause a duplication; error:', err.message);
-                return res
-                    .status(httpStatus.CONFLICT)
-                    .message({
-                        message: `Unable to register: ${err.message}`
-                    });
-            }
-            log.log('error', 'REGISTER', 'Error at tryRegisterUser:', err.message);
+    try {
+        await User.create({name, surname, email, password, organization});
+    } catch (err) {
+        if (err instanceof DuplicateKeyError) {
+            log.log('error', 'REGISTER', 'Registered user will cause a duplication; error:', err.message);
             return res
-                .status(httpStatus.INTERNAL_SERVER_ERROR)
-                .message({
-                    message: 'Unable to register user due to internal error'
+                .status(httpStatus.CONFLICT)
+                .json({
+                    message: `Unable to register: ${err.message}`
                 });
-        })
+        }
+        log.log('error', 'REGISTER', 'Error at tryRegisterUser:', err.message);
+        return res
+            .status(httpStatus.INTERNAL_SERVER_ERROR)
+            .json({
+                message: 'Unable to register user due to internal error'
+            });
+    }
+    next();
 }
 
 const sendResponse = (req, res) => {
