@@ -69,6 +69,33 @@ describe('Test get product controller', function () {
 
     });
 
+    describe('Test valid product id', function () {
+
+        it('Should call next', function (done) {
+            const {req, res} = httpMocks.createMocks({params: {productId: '537eed02ed345b2e039652d2'}});
+
+            validProductId(req, res, done);
+        });
+
+        it('Should return BAD_REQUEST with "message" field in JSON res', function (done) {
+            const productIds = ['123', 'microsoft123'];
+            let tests = 2;
+            for (const productId of productIds) {
+                const {req, res} = httpMocks.createMocks({params: {productId}});
+
+                validProductId(req, res);
+
+                expect(res._getStatusCode()).to.be.equal(httpStatus.BAD_REQUEST);
+                expect(res._isJSON()).to.be.true;
+                expect(res._getJSONData()).to.have.property('message');
+                if (!--tests) {
+                    done();
+                }
+            }
+        });
+
+    });
+
 
 });
 

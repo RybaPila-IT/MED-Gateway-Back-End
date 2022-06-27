@@ -19,7 +19,17 @@ const requireProductId = (req, res, next) => {
 
 const validProductId = (req, res, next) => {
     const {productId} = req.params;
-    const objId = new mongoose.Types.ObjectId(productId);
+    let objId = undefined;
+    try {
+        objId = new mongoose.Types.ObjectId(productId);
+    } catch (err) {
+        log.log('info', 'GET PRODUCT', 'provided product ID is invalid; productId:', productId);
+        return res
+            .status(httpStatus.BAD_REQUEST)
+            .json({
+                message: 'Provided product identifier is invalid'
+            });
+    }
     if (objId.toString() !== productId) {
         log.log('info', 'GET PRODUCT', 'provided product ID is invalid; productId:', productId);
         return res
