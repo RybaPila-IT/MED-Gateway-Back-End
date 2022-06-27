@@ -132,6 +132,27 @@ describe('Test get history controller', function () {
 
     });
 
+    describe('Test send response', function () {
+
+        it('Should return OK with entries in JSON res', function (done) {
+            const history = {
+                entries: ['1', '2', '3']
+            };
+            const {req, res} = httpMocks.createMocks();
+            // Preparing the req
+            req.history = history;
+
+            sendResponse(req, res);
+
+            expect(res._getStatusCode()).to.be.equal(httpStatus.OK);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.have.property('entries');
+            expect(res._getJSONData().entries).to.include.members(history.entries);
+            done();
+        });
+
+    })
+
     after(async function () {
         // Stop mongo server
         await mongoose.disconnect();
