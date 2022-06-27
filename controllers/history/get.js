@@ -1,7 +1,23 @@
-const {getHistoryMiddlewarePipeline} = require('../../middleware/history/get');
-const History = require('../../data/models/history');
 const httpStatus = require('http-status-codes');
+const log = require('npmlog');
 
+const History = require('../../data/models/history');
+const {
+    userIsVerified
+} = require('../../middleware/authenticate');
+
+
+const requireProductIdInParams = (req, res, next) => {
+    const {productId} = req.params;
+    if (!productId) {
+        return res
+            .status(httpStatus.BAD_REQUEST)
+            .json({
+                message: 'Unable to fetch history for product since productID is missing'
+            });
+    }
+    next();
+}
 
 // TODO (radek.r) Move it to separate file in order to reduce duplication.
 // TODO (radek.r) Think about where the middlewares and controller functions should be stored.
@@ -46,7 +62,7 @@ const fetchUserHistory = (req, res, next) => {
         });
 }
 
-const generateResponse = (req, res) => {
+const sendResponse = (req, res) => {
     res
         .status(httpStatus.OK)
         .json({
@@ -56,12 +72,17 @@ const generateResponse = (req, res) => {
 
 
 const getHistory = [
-    ...getHistoryMiddlewarePipeline,
+    ...userIsVerified,
+    requireProductIdInParams,
     fetchUserHistory,
-    generateResponse
+    sendResponse
 ];
 
 
 module.exports = {
-    getHistory
+    getHistory,
+    // Export single functions for testing
+    requireProductIdInParams,
+    fetchUserHistory,
+    sendResponse
 };
