@@ -172,14 +172,73 @@ describe('Test verification verify controller', function () {
             await verifyUserAccount(req, res, function () {
             });
 
-            const user = await User.findById(userId);
+            const user = await User.findById(userId).exec();
 
             expect(user.status).to.be.equal('verified');
         });
 
-
         after(async function () {
             await User.deleteMany({});
+        });
+
+    });
+
+    describe('Test delete verification', function () {
+
+        let verificationId = undefined;
+
+        beforeEach(async function() {
+            const ver = await Verification.create({user_id: '537eed02ed345b2e039652d2'});
+            verificationId = ver._id;
+        });
+
+        it('Should delete verification entry', async function() {
+            const {req, res} = httpMocks.createMocks();
+            // Preparing the req
+            req.ver = {
+                _id: verificationId
+            };
+
+            await deleteVerification(req, res, function () {
+            });
+
+            const ver = await Verification.findById(verificationId);
+
+            expect(ver).to.be.null;
+        });
+
+        it('Should not delete verification entry (1)', async function() {
+            const {req, res} = httpMocks.createMocks();
+            // Preparing the req
+            req.ver = {
+                _id: '537eed02ed345b2e039652d2'
+            };
+
+            await deleteVerification(req, res, function () {
+            });
+
+            const ver = await Verification.findById(verificationId);
+
+            expect(ver).to.not.be.undefined;
+        });
+
+        it('Should not delete verification entry (2)', async function() {
+            const {req, res} = httpMocks.createMocks();
+            // Preparing the req
+            req.ver = {
+                _id: 'hello'
+            };
+
+            await deleteVerification(req, res, function () {
+            });
+
+            const ver = await Verification.findById(verificationId);
+
+            expect(ver).to.not.be.undefined;
+        });
+
+        afterEach(async function() {
+            await Verification.deleteMany({});
         });
 
     });

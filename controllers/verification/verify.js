@@ -72,18 +72,15 @@ const verifyUserAccount = async (req, res, next) => {
 }
 
 
-const deleteVerification = (req, res, next) => {
+const deleteVerification = async (req, res, next) => {
     const {ver} = req;
-
-    Verification
-        .findByIdAndDelete(ver._id)
-        .catch(err => {
-            log.log('error', 'VERIFY', 'Error at deleteVerification', err.message);
-        })
-        .finally(_ => {
-            // We do not want to break the pipeline here, since deleting this entry is not mandatory.
-            next();
-        })
+    try {
+        await Verification.findByIdAndDelete(ver._id);
+    } catch (err) {
+        log.log('error', 'VERIFY', 'Error at deleteVerification', err.message);
+    }
+    // We do not want to break the pipeline here, since deleting this entry is not mandatory.
+    next();
 }
 
 const sendResponse = (req, res) => {
