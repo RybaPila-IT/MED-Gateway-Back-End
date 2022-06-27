@@ -1,15 +1,19 @@
 require('dotenv').config()
 
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 const httpStatus = require('http-status-codes');
 const chai = require('chai');
 const expect = chai.expect;
 const {MongoMemoryServer} = require('mongodb-memory-server');
 const log = require('npmlog');
+const nock = require('nock');
 const httpMocks = require('node-mocks-http');
+const Endpoints = require('../../../env/endpoints');
 const Product = require('../../../data/models/product');
 const {
-    productIsActive
+    productIsActive,
+    convertImageData,
+    makePrediction
 } = require('../../../controllers/products/use');
 
 // Turn off logging for testing
@@ -52,6 +56,41 @@ describe('Test get product controller', function () {
             expect(res._isJSON()).to.be.true;
             expect(res._getJSONData()).to.have.property('message');
             done();
+        });
+
+    });
+
+    describe('Test convert image data', function () {
+
+        it('Should set req.body.data into converted response', async function() {
+            const data = 'sample data'
+            // Setting up nock for the request.
+            nock(Endpoints.DicomConverter)
+                .post('/convert', body => body === data)
+                .reply(200, {data: {prediction: 'This is prediction'}});
+
+            const {req, res} = httpMocks.createMocks({body: {data}});
+
+            await convertImageData(req, res, function (){
+            });
+
+            expect(req.body.data).to.be.deep.equal({data: {prediction: 'This is prediction'}});
+        });
+
+        it('Should return INTERNAL_SERVER_ERROR with "message" in JSON res', async function() {
+            const data = 'sample data'
+            // Setting up nock for the request.
+            nock(Endpoints.DicomConverter)
+                .post('/convert', body => body === data)
+                .replyWithError('Some error happened');
+
+            const {req, res} = httpMocks.createMocks({body: {data}});
+
+            await convertImageData(req, res);
+
+            expect(res._getStatusCode()).to.be.equal(httpStatus.INTERNAL_SERVER_ERROR);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.have.property('message');
         });
 
     });

@@ -77,7 +77,7 @@ const ensurePredictionPropertiesArePresent = (req, res, next) => {
 const convertImageData = async (req, res, next) => {
     const {data} = req.body;
     const token = process.env[EnvKeys.dicomConverterAccessToken];
-    const dicomConverterURL = `${Endpoints.DicomConverter}/predict`
+    const dicomConverterURL = `${Endpoints.DicomConverter}/convert`
     let converterResponse = undefined;
     try {
         converterResponse = checkResponseStatus(
