@@ -187,12 +187,12 @@ describe('Test verification verify controller', function () {
 
         let verificationId = undefined;
 
-        beforeEach(async function() {
+        beforeEach(async function () {
             const ver = await Verification.create({user_id: '537eed02ed345b2e039652d2'});
             verificationId = ver._id;
         });
 
-        it('Should delete verification entry', async function() {
+        it('Should delete verification entry', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
             req.ver = {
@@ -207,7 +207,7 @@ describe('Test verification verify controller', function () {
             expect(ver).to.be.null;
         });
 
-        it('Should not delete verification entry (1)', async function() {
+        it('Should not delete verification entry (1)', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
             req.ver = {
@@ -222,7 +222,7 @@ describe('Test verification verify controller', function () {
             expect(ver).to.not.be.undefined;
         });
 
-        it('Should not delete verification entry (2)', async function() {
+        it('Should not delete verification entry (2)', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
             req.ver = {
@@ -237,82 +237,26 @@ describe('Test verification verify controller', function () {
             expect(ver).to.not.be.undefined;
         });
 
-        afterEach(async function() {
+        afterEach(async function () {
             await Verification.deleteMany({});
         });
 
     });
 
+    describe('Test send response', function () {
 
-    // describe('Test send verification email', function () {
-    //
-    //     // afterEach(function() {
-    //     //     nodemailerMock.mock.reset();
-    //     // });
-    //
-    //     it('Should send verification email', async function () {
-    //         const {req, res} = httpMocks.createMocks();
-    //         let nextCalled = false;
-    //         // Preparing the req
-    //         req.user = {
-    //             email: 'someEmail@gmail.com'
-    //         };
-    //         req.ver = {
-    //             _id: '12345'
-    //         };
-    //
-    //         await sendVerificationEmail(req, res, function() {
-    //             nextCalled = true;
-    //
-    //             const sentMail = nodemailerMock.mock.getSentMail();
-    //
-    //             expect(sentMail.length).to.equal(1);
-    //             expect(sentMail[0]).to.have.include({
-    //                 from: 'med-gateway@outlook.com',
-    //                 to: 'someEmail@gmail.com',
-    //                 subject: 'Account verification',
-    //                 html: '<h1>Welcome to MED-Gateway System!</h1>In order to verify the account please visit this <a href="http://localhost/5000/api/verify/12345">link</a>'
-    //             });
-    //         });
-    //
-    //         expect(nextCalled).to.be.true;
-    //     });
-    //
-    //     it('Should return INTERNAL_SERVER_ERROR with "message" in JSON res', async function () {
-    //         nodemailerMock.mock.setShouldFailOnce();
-    //
-    //         const {req, res} = httpMocks.createMocks();
-    //         // Preparing the req
-    //         req.user = {
-    //             email: 'someEmail@gmail.com'
-    //         };
-    //         req.ver = {
-    //             _id: '12345'
-    //         };
-    //
-    //         await sendVerificationEmail(req, res);
-    //
-    //         expect(res._getStatusCode()).to.equal(httpStatus.INTERNAL_SERVER_ERROR);
-    //         expect(res._isJSON()).to.be.true;
-    //         expect(res._getJSONData()).to.have.property('message');
-    //     });
-    //
-    // });
-    //
-    // describe('Test send response', function () {
-    //
-    //     it('Should return OK with "message" in JSON res', function (done) {
-    //         const {req, res} = httpMocks.createMocks();
-    //
-    //         sendResponse(req, res);
-    //
-    //         expect(res._getStatusCode()).to.be.equal(httpStatus.OK);
-    //         expect(res._isJSON()).to.be.true;
-    //         expect(res._getJSONData()).to.have.property('message');
-    //         done();
-    //     });
-    //
-    // });
+        it('Should return OK with "message" in JSON res', function (done) {
+            const {req, res} = httpMocks.createMocks();
+
+            sendResponse(req, res);
+
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.have.property('message');
+            expect(res._getStatusCode()).to.be.equal(httpStatus.OK);
+            done();
+        });
+
+    });
 
     after(async function () {
         // Stop mongo server
