@@ -34,19 +34,30 @@ chai.use(chaiHttp);
 //
 // server.use(handleError);
 
+const {MongoMemoryServer} = require('mongodb-memory-server');
 const log = require('npmlog');
 const httpMocks = require('node-mocks-http');
+const Product = require('../../../data/models/product');
 const {
     requireProductId,
     validProductId,
     getProductData,
     getAllProductsSummary
-} = require('../../../controllers/products/get')
+} = require('../../../controllers/products/get');
 
 // Turn off logging for testing
 log.pause();
 
+let mongoServer = undefined;
+
 describe('Test get product controller', function () {
+
+    before(async function () {
+        mongoServer = await MongoMemoryServer.create();
+        await mongoose.connect(
+            mongoServer.getUri()
+        );
+    });
 
     describe('Test require product id', function () {
 
@@ -96,6 +107,63 @@ describe('Test get product controller', function () {
 
     });
 
+    describe('Test get product data', function () {
+
+        let productId = undefined;
+
+        before(async function() {
+            const product = await Product.create({
+                name: 'test',
+                short_description: 'test',
+                full_description: 'test',
+                usage_description: 'test',
+                is_active: true,
+                photo_url: 'test'
+            });
+            // Set id for tests.
+            productId = product._id;
+        });
+
+        it('Should return BAD_REQUEST with "message" in JSON res', async function() {
+            const {req, res} = httpMocks.createMocks({params: {productId: '537eed02ed345b2e039652d2'}});
+
+            await getProductData(req, res);
+
+            expect(res._getStatusCode()).to.equal(httpStatus.BAD_REQUEST);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.have.property('message');
+        });
+
+        it('Should return OK with product data in JSON res', async function() {
+            const {req, res} = httpMocks.createMocks({params: {productId}});
+
+            await getProductData(req, res);
+
+            expect(res._getStatusCode()).to.be.equal(httpStatus.OK);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.include({
+                _id: productId.toString(),
+                name: 'test',
+                short_description: 'test',
+                full_description: 'test',
+                usage_description: 'test',
+                is_active: true,
+                photo_url: 'test'
+            });
+        });
+
+        after(async function() {
+            await Product.findByIdAndDelete(productId);
+            productId = undefined;
+        });
+
+    });
+
+
+    after(async function () {
+        await mongoose.disconnect();
+        await mongoServer.stop();
+    });
 
 });
 
