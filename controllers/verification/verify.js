@@ -2,7 +2,7 @@ const httpStatus = require('http-status-codes');
 const log = require('npmlog');
 
 const User = require('../../data/models/user');
-const Verification = require("../../data/models/verification");
+const Verification = require('../../data/models/verification');
 
 
 const requireVerificationData = (req, res, next) => {
@@ -19,30 +19,28 @@ const requireVerificationData = (req, res, next) => {
     next();
 }
 
-const fetchVerificationById = (req, res, next) => {
+const fetchVerificationById = async (req, res, next) => {
     const {verifyId} = req;
-
-    Verification
-        .findById(verifyId)
-        .then(ver => {
-            if (!ver) {
-                return res
-                    .status(httpStatus.BAD_REQUEST)
-                    .json({
-                        message: `Verification with id ${verifyId} does not exist`
-                    });
-            }
-            req.ver = ver['_doc'];
-            next();
-        })
-        .catch(err => {
-            log.log('error', 'VERIFY', 'Error at fetchVerificationById:', err.message);
-            res
-                .status(httpStatus.INTERNAL_SERVER_ERROR)
-                .json({
-                    message: `Error while fetching verification document with id ${verifyId}`
-                });
-        })
+    let ver = undefined;
+    try {
+        ver = await Verification.findById(verifyId);
+    } catch (err) {
+        log.log('error', 'VERIFY', 'Error at fetchVerificationById:', err.message);
+        return res
+            .status(httpStatus.INTERNAL_SERVER_ERROR)
+            .json({
+                message: `Error while fetching verification document with id ${verifyId}`
+            });
+    }
+    if (!ver) {
+        return res
+            .status(httpStatus.BAD_REQUEST)
+            .json({
+                message: `Verification with ID ${verifyId} does not exist`
+            });
+    }
+    req.ver = ver['_doc'];
+    next();
 }
 
 
