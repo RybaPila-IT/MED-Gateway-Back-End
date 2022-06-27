@@ -27,31 +27,29 @@ const requireVerificationData = (req, res, next) => {
 }
 
 
-const createVerification = (req, res, next) => {
+const createVerification = async (req, res, next) => {
     const {_id} = req.user;
-
-    Verification
-        .findOneAndUpdate({user_id: _id}, {$set: {user_id: _id}}, {new: true, upsert: true})
-        .then(ver => {
-            if (!ver) {
-                log.log('error', 'SEND VERIFICATION', 'Error at fetchVerificationEntry: document was not created');
-                return res
-                    .status(httpStatus.INTERNAL_SERVER_ERROR)
-                    .json({
-                        message: 'Internal error while sending verification email'
-                    });
-            }
-            req.ver = ver['_doc'];
-            next();
-        })
-        .catch(err => {
-            log.log('error', 'SEND VERIFICATION', 'Error at fetchVerificationEntry:', err.message);
-            return res
-                .status(httpStatus.INTERNAL_SERVER_ERROR)
-                .json({
-                    message: 'Internal error while sending verification email'
-                });
-        })
+    let ver = undefined;
+    try {
+        ver = await Verification.findOneAndUpdate({user_id: _id}, {$set: {user_id: _id}}, {new: true, upsert: true});
+    } catch (err) {
+        log.log('error', 'SEND VERIFICATION', 'Error at createVerification:', err.message);
+        return res
+            .status(httpStatus.INTERNAL_SERVER_ERROR)
+            .json({
+                message: 'Internal error while sending verification email'
+            });
+    }
+    if (!ver) {
+        log.log('error', 'SEND VERIFICATION', 'Error at createVerification: document was not created');
+        return res
+            .status(httpStatus.INTERNAL_SERVER_ERROR)
+            .json({
+                message: 'Internal error while sending verification email'
+            });
+    }
+    req.ver = ver['_doc'];
+    next();
 }
 
 const sendVerificationEmail = (req, res, next) => {

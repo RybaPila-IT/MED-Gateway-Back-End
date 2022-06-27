@@ -72,6 +72,32 @@ describe('Test verification send controller', function () {
 
     });
 
+    describe('Test create verification', function () {
+
+        it('Should create verification and set ver in req', async function() {
+
+            const {req, res} = httpMocks.createMocks();
+            let nextCalled = false;
+            // Preparing the req
+            req.user = {
+                _id: '537eed02ed345b2e039652d2'
+            };
+
+            await createVerification(req, res, async function() {
+                nextCalled = true;
+
+                const verification = await Verification.findOne({user_id: '537eed02ed345b2e039652d2'});
+
+                expect(verification).not.to.be.undefined;
+                expect(req).to.have.property('ver');
+                expect(req.ver).to.include(verification['_doc']);
+            });
+
+            expect(nextCalled).to.be.true;
+        });
+
+    });
+
 
     after(async function() {
         // Stop mongo server
