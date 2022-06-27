@@ -8,13 +8,15 @@ const log = require('npmlog');
 const httpMocks = require('node-mocks-http');
 const {MongoMemoryServer} = require('mongodb-memory-server');
 const User = require('../../../data/models/user');
-const {
-    requireRegisterData,
-    genSalt,
-    hashPassword,
-    createUser,
-    sendResponse
-} = require('../../../controllers/user/register')
+const mockery = require('mockery');
+const nodemailerMock = require('nodemailer-mock');
+
+let requireRegisterData = undefined
+let genSalt = undefined
+let hashPassword = undefined
+let createUser = undefined
+let sendResponse = undefined
+
 
 // Stop logging for tests.
 log.pause()
@@ -30,6 +32,26 @@ describe('Test user register controller', function () {
         );
         // For unique index instantiating
         await User.ensureIndexes();
+        // Mock the nodemailer package
+        await mockery.enable({
+            warnOnUnregistered: false,
+            warnOnReplace: false
+        });
+        await mockery.registerMock('nodemailer', nodemailerMock);
+        // Load packages this way in order to mock the transporter.
+        const {
+            requireRegisterData: f1,
+            genSalt: f2,
+            hashPassword: f3,
+            createUser: f4,
+            sendResponse: f5
+        } = require('../../../controllers/user/register');
+        // Assign loaded functions.
+        requireRegisterData = f1;
+        genSalt = f2;
+        hashPassword = f3;
+        createUser = f4;
+        sendResponse = f5;
     });
 
     describe('Test require register data', function () {
@@ -191,8 +213,12 @@ describe('Test user register controller', function () {
     });
 
     after(async function () {
+        // Stop mongo server
         await mongoose.disconnect();
         await mongoServer.stop();
+        // Turn off mockery
+        await mockery.deregisterAll();
+        await mockery.disable();
     });
 
 });

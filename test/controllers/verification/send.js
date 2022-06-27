@@ -32,12 +32,12 @@ describe('Test verification send controller', function () {
             mongoServer.getUri()
         );
         // Mock the nodemailer package
-        mockery.enable({
+        await mockery.enable({
             warnOnUnregistered: false,
             warnOnReplace: false
         });
-        mockery.registerMock('nodemailer', nodemailerMock);
-        // Load the transporter in order to mock its nodemailer dependency
+        await mockery.registerMock('nodemailer', nodemailerMock);
+        // Load packages this way in order to mock the transporter.
         const {
             requireVerificationData: f1,
             createVerification: f2,
@@ -105,9 +105,9 @@ describe('Test verification send controller', function () {
 
     describe('Test send verification email', function () {
 
-        afterEach(function() {
-            nodemailerMock.mock.reset();
-        });
+        // afterEach(function() {
+        //     nodemailerMock.mock.reset();
+        // });
 
         it('Should send verification email', async function () {
             const {req, res} = httpMocks.createMocks();
@@ -149,7 +149,6 @@ describe('Test verification send controller', function () {
                 _id: '12345'
             };
 
-
             await sendVerificationEmail(req, res);
 
             expect(res._getStatusCode()).to.equal(httpStatus.INTERNAL_SERVER_ERROR);
@@ -159,15 +158,28 @@ describe('Test verification send controller', function () {
 
     });
 
+    describe('Test send response', function () {
+
+        it('Should return OK with "message" in JSON res', function (done) {
+            const {req, res} = httpMocks.createMocks();
+
+            sendResponse(req, res);
+
+            expect(res._getStatusCode()).to.be.equal(httpStatus.OK);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.have.property('message');
+            done();
+        });
+
+    });
 
     after(async function () {
         // Stop mongo server
         await mongoose.disconnect();
         await mongoServer.stop();
         // Turn off mockery
-        mockery.deregisterAll();
-        mockery.disable();
+        await mockery.deregisterAll();
+        await mockery.disable();
     });
-
 
 });
