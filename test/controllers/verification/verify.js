@@ -10,6 +10,7 @@ const {
 const log = require('npmlog');
 const httpMocks = require('node-mocks-http');
 const Verification = require('../../../data/models/verification');
+const User = require('../../../data/models/user');
 const {
     requireVerificationData,
     fetchVerificationById,
@@ -63,7 +64,7 @@ describe('Test verification verify controller', function () {
 
         let verifyId = undefined;
 
-        before(async function() {
+        before(async function () {
             const ver = await Verification.create({user_id: '537eed02ed345b2e039652d2'});
             verifyId = ver._id;
         });
@@ -84,7 +85,7 @@ describe('Test verification verify controller', function () {
             expect(req.ver._id.toString()).to.equal(ver['_doc']._id.toString());
         });
 
-        it('Should return BAD_REQUEST with "message" in JSON res', async function() {
+        it('Should return BAD_REQUEST with "message" in JSON res', async function () {
 
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
@@ -97,7 +98,7 @@ describe('Test verification verify controller', function () {
             expect(res._getJSONData()).to.have.property('message');
         });
 
-        it('Should return INTERNAL_SERVER_ERROR with "message" in JSON res', async function() {
+        it('Should return INTERNAL_SERVER_ERROR with "message" in JSON res', async function () {
 
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
@@ -111,11 +112,78 @@ describe('Test verification verify controller', function () {
 
         });
 
-        after(async function() {
-           await Verification.deleteMany({});
+        after(async function () {
+            await Verification.deleteMany({});
         });
 
     });
+
+    describe('Test verify user account', function () {
+
+        let userId = undefined;
+
+        before(async function () {
+            const user = await User.create({
+                name: 'test',
+                surname: 'test',
+                email: 'some@email',
+                password: 'password',
+                organization: 'test',
+                status: 'unverified'
+            });
+            userId = user._id;
+        });
+
+        it('Should return BAD_REQUEST with "message" in JSON res', async function () {
+            const {req, res} = httpMocks.createMocks();
+            // Preparing the request
+            req.ver = {
+                user_id: '537eed02ed345b2e039652d2'
+            };
+
+            await verifyUserAccount(req, res);
+
+            expect(res._getStatusCode()).to.be.equal(httpStatus.BAD_REQUEST);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.have.property('message');
+        });
+
+        it('Should return INTERNAL_SERVER_ERROR with "message" in JSON res', async function () {
+            const {req, res} = httpMocks.createMocks();
+            // Preparing the request
+            req.ver = {
+                user_id: 'hello'
+            };
+
+            await verifyUserAccount(req, res);
+
+            expect(res._getStatusCode()).to.be.equal(httpStatus.INTERNAL_SERVER_ERROR);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.have.property('message');
+        });
+
+        it('Should verify user and call next', async function () {
+            const {req, res} = httpMocks.createMocks();
+            // Preparing the request
+            req.ver = {
+                user_id: userId
+            };
+
+            await verifyUserAccount(req, res, function () {
+            });
+
+            const user = await User.findById(userId);
+
+            expect(user.status).to.be.equal('verified');
+        });
+
+
+        after(async function () {
+            await User.deleteMany({});
+        });
+
+    });
+
 
     // describe('Test send verification email', function () {
     //

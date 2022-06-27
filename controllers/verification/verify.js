@@ -45,32 +45,30 @@ const fetchVerificationById = async (req, res, next) => {
 
 
 
-const verifyUserAccount = (req, res, next) => {
+const verifyUserAccount = async (req, res, next) => {
     const update = { status: 'verified' };
     const options = { new: true };
     const {ver} = req;
-
-    User
-        .findByIdAndUpdate(ver.user_id, update, options)
-        .then(userDoc => {
-            if (!userDoc) {
-                log.log('error', 'VERIFY', 'Error: user with id', ver.user_id, 'does not exist');
-                return res
-                    .status(httpStatus.BAD_REQUEST)
-                    .json({
-                        message: 'Attempt to verify user which does not exist'
-                    });
-            }
-            next();
-        })
-        .catch(err => {
-            log.log('error', 'VERIFY', 'Error at verifyUserAccount:', err.message);
-            res
-                .status(httpStatus.INTERNAL_SERVER_ERROR)
-                .json({
-                    message: 'Internal error while verifying user account'
-                });
-        })
+    let user = undefined;
+    try {
+        user = await User.findByIdAndUpdate(ver.user_id, update, options).exec();
+    } catch (err) {
+        log.log('error', 'VERIFY', 'Error at verifyUserAccount:', err.message);
+        return res
+            .status(httpStatus.INTERNAL_SERVER_ERROR)
+            .json({
+                message: 'Internal error while verifying user account'
+            });
+    }
+    if (!user) {
+        log.log('error', 'VERIFY', 'Error: user with id', ver.user_id, 'does not exist');
+        return res
+            .status(httpStatus.BAD_REQUEST)
+            .json({
+                message: 'Attempt to verify user which does not exist'
+            });
+    }
+    next();
 }
 
 
