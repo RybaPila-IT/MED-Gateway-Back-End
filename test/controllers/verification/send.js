@@ -12,12 +12,11 @@ const nodemailerMock = require('nodemailer-mock');
 const log = require('npmlog');
 const httpMocks = require('node-mocks-http');
 const Verification = require('../../../data/models/verification');
-const {
-    requireVerificationData,
-    createVerification,
-    sendVerificationMail,
-    sendResponse
-} = require('../../../controllers/verification/send');
+// This module loaded this way in order to ensure mocking of nodemailer.
+let sendVerificationEmail = undefined;
+let requireVerificationData = undefined;
+let createVerification = undefined;
+let sendResponse = undefined;
 
 // Turn off logging for tests
 log.pause();
@@ -26,7 +25,7 @@ let mongoServer = undefined;
 
 describe('Test verification send controller', function () {
 
-    before(async function() {
+    before(async function () {
         // Set up mongo server for mongoose
         mongoServer = await MongoMemoryServer.create();
         await mongoose.connect(
@@ -39,24 +38,30 @@ describe('Test verification send controller', function () {
         });
         mockery.registerMock('nodemailer', nodemailerMock);
         // Load the transporter in order to mock its nodemailer dependency
-        const _ = require('../../../mail/transporter');
+        const {
+            requireVerificationData: f1,
+            createVerification: f2,
+            sendVerificationEmail: f3,
+            sendResponse: f4
+        } = require('../../../controllers/verification/send');
+        // Assign the imports
+        requireVerificationData = f1;
+        createVerification = f2;
+        sendVerificationEmail = f3;
+        sendResponse = f4;
     });
-
-    // afterEach(async function() {
-    //     nodemailerMock.mock.reset();
-    // });
 
     describe('Test require verification data', function () {
 
         it('Should return BAD_REQUEST with "message" in JSON res', function (done) {
-           const {req, res} = httpMocks.createMocks();
+            const {req, res} = httpMocks.createMocks();
 
-           requireVerificationData(req, res);
+            requireVerificationData(req, res);
 
-           expect(res._getStatusCode()).to.be.equal(httpStatus.BAD_REQUEST);
-           expect(res._isJSON()).to.be.true;
-           expect(res._getJSONData()).to.have.property('message');
-           done();
+            expect(res._getStatusCode()).to.be.equal(httpStatus.BAD_REQUEST);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.have.property('message');
+            done();
         });
 
         it('Should call next and set email in req', function (done) {
@@ -74,7 +79,7 @@ describe('Test verification send controller', function () {
 
     describe('Test create verification', function () {
 
-        it('Should create verification and set ver in req', async function() {
+        it('Should create verification and set ver in req', async function () {
 
             const {req, res} = httpMocks.createMocks();
             let nextCalled = false;
@@ -83,7 +88,7 @@ describe('Test verification send controller', function () {
                 _id: '537eed02ed345b2e039652d2'
             };
 
-            await createVerification(req, res, async function() {
+            await createVerification(req, res, async function () {
                 nextCalled = true;
 
                 const verification = await Verification.findOne({user_id: '537eed02ed345b2e039652d2'});
@@ -98,8 +103,64 @@ describe('Test verification send controller', function () {
 
     });
 
+    describe('Test send verification email', function () {
 
-    after(async function() {
+        afterEach(function() {
+            nodemailerMock.mock.reset();
+        });
+
+        it('Should send verification email', async function () {
+            const {req, res} = httpMocks.createMocks();
+            let nextCalled = false;
+            // Preparing the req
+            req.user = {
+                email: 'someEmail@gmail.com'
+            };
+            req.ver = {
+                _id: '12345'
+            };
+
+            await sendVerificationEmail(req, res, function() {
+                nextCalled = true;
+
+                const sentMail = nodemailerMock.mock.getSentMail();
+
+                expect(sentMail.length).to.equal(1);
+                expect(sentMail[0]).to.have.include({
+                    from: 'med-gateway@outlook.com',
+                    to: 'someEmail@gmail.com',
+                    subject: 'Account verification',
+                    html: '<h1>Welcome to MED-Gateway System!</h1>In order to verify the account please visit this <a href="http://localhost/5000/api/verify/12345">link</a>'
+                });
+            });
+
+            expect(nextCalled).to.be.true;
+        });
+
+        it('Should return INTERNAL_SERVER_ERROR with "message" in JSON res', async function () {
+            nodemailerMock.mock.setShouldFailOnce();
+
+            const {req, res} = httpMocks.createMocks();
+            // Preparing the req
+            req.user = {
+                email: 'someEmail@gmail.com'
+            };
+            req.ver = {
+                _id: '12345'
+            };
+
+
+            await sendVerificationEmail(req, res);
+
+            expect(res._getStatusCode()).to.equal(httpStatus.INTERNAL_SERVER_ERROR);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.have.property('message');
+        });
+
+    });
+
+
+    after(async function () {
         // Stop mongo server
         await mongoose.disconnect();
         await mongoServer.stop();
@@ -107,7 +168,6 @@ describe('Test verification send controller', function () {
         mockery.deregisterAll();
         mockery.disable();
     });
-
 
 
 });

@@ -52,31 +52,27 @@ const createVerification = async (req, res, next) => {
     next();
 }
 
-const sendVerificationEmail = (req, res, next) => {
+const sendVerificationEmail = async (req, res, next) => {
     const {_id} = req.ver;
     const {email} = req.user;
     const link = `${Endpoints.MedGatewayBackend}/api/verify/${_id}`;
-
     const options = {
         ...defaultOptions,
         to: email,
         subject: 'Account verification',
         html: `<h1>Welcome to MED-Gateway System!</h1>In order to verify the account please visit this <a href="${link}">link</a>`
     };
-
-    transporter
-        .sendMail(options)
-        .then(_ => {
-            next();
-        })
-        .catch(err => {
-            log.log('error', 'SEND VERIFICATION', 'Error at sendVerificationEmail:', err.message);
-            res
-                .status(httpStatus.INTERNAL_SERVER_ERROR)
-                .json({
-                    message: 'Unable to send verification email. Try again later or check if provided email is correct'
-                });
-        });
+    try {
+        await transporter.sendMail(options);
+    } catch (err) {
+        log.log('error', 'SEND VERIFICATION', 'Error at sendVerificationEmail:', err.message);
+        return res
+            .status(httpStatus.INTERNAL_SERVER_ERROR)
+            .json({
+                message: 'Unable to send verification email. Try again later or check if provided email is correct'
+            });
+    }
+    next();
 }
 
 const sendResponse = (req, res) => {
