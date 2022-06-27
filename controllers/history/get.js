@@ -16,50 +16,30 @@ const requireProductIdInParams = (req, res, next) => {
                 message: 'Unable to fetch history for product since productID is missing'
             });
     }
+    req.product_id = productId;
     next();
 }
 
-// TODO (radek.r) Move it to separate file in order to reduce duplication.
-// TODO (radek.r) Think about where the middlewares and controller functions should be stored.
-const fetchUserHistory = (req, res, next) => {
-    const {productId} = req.params;
-    const {_id: userId} = req.token;
-
-    History
-        .findOne({product_id: productId, user_id: userId})
-        .then(doc => {
-            if (doc) {
-                // If the history already exists just set it into request.
-                req.history = doc;
-                // Continue the pipeline.
-                return next();
-            }
-            History
-                .create({
-                    product_id: productId,
-                    user_id: userId,
-                })
-                .then(doc => {
-                    // Set the history object in the request.
-                    req.history = doc;
-                    // Continue the pipeline.
-                    next();
-                })
-                .catch(err => {
-                    res
-                        .status(httpStatus.INTERNAL_SERVER_ERROR)
-                        .json({
-                            message: `Create history for product ${productId}: ${err.message}`
-                        });
-                })
-        })
-        .catch(err => {
-            res
-                .status(httpStatus.INTERNAL_SERVER_ERROR)
-                .json({
-                    message: `Find history for product ${productId}: ${err.message}`
-                });
-        });
+const fetchHistory = async (req, res, next) => {
+    const {product_id} = req;
+    const {_id: user_id} = req.token;
+    const filter = {product_id, user_id};
+    const update = {};
+    const options = {upsert: true, new: true};
+    let historyDoc = undefined;
+    try {
+        // Using findOneAndUpdate in order to use upsert option.
+        historyDoc = await History.findOneAndUpdate(filter, update, options).exec();
+    } catch (err) {
+        log.log('error', 'GET HISTORY', 'Error at fetchHistory:', err.message);
+        return res
+            .status(httpStatus.INTERNAL_SERVER_ERROR)
+            .json({
+                message: `Internal error while fetching history for product ${product_id}`
+            });
+    }
+    req.history_doc = historyDoc;
+    next();
 }
 
 const sendResponse = (req, res) => {
@@ -74,7 +54,7 @@ const sendResponse = (req, res) => {
 const getHistory = [
     ...userIsVerified,
     requireProductIdInParams,
-    fetchUserHistory,
+    fetchHistory,
     sendResponse
 ];
 
@@ -83,6 +63,6 @@ module.exports = {
     getHistory,
     // Export single functions for testing
     requireProductIdInParams,
-    fetchUserHistory,
+    fetchHistory,
     sendResponse
 };
