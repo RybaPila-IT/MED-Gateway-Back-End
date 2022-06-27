@@ -31,32 +31,6 @@ describe('Test get history controller', function () {
         );
     });
 
-    describe('Test require product ID in params', function () {
-
-        it('Should set product_id in req', function (done) {
-            const {req, res} = httpMocks.createMocks({params: {productId: '123'}});
-
-            requireProductIdInParams(req, res, function () {
-            });
-
-            expect(req).to.have.property('product_id');
-            expect(req.product_id).to.be.equal('123');
-            done();
-        });
-
-        it('Should return BAD_REQUEST with "message" in JSON res', function (done) {
-            const {req, res} = httpMocks.createMocks();
-
-            requireProductIdInParams(req, res);
-
-            expect(res._getStatusCode()).to.be.equal(httpStatus.BAD_REQUEST);
-            expect(res._isJSON()).to.be.true;
-            expect(res._getJSONData()).to.have.property('message');
-            done();
-        });
-
-    });
-
     describe('Test fetch history', function () {
 
         before(async function () {

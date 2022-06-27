@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 
 const Product = require('../../data/models/product');
 
-const requireProductId = (req, res, next) => {
+const requireProductIdInParams = (req, res, next) => {
     const {productId} = req.params;
     if (!productId) {
         log.log('info', 'GET PRODUCT', 'missing product ID in request parameters');
@@ -14,24 +14,25 @@ const requireProductId = (req, res, next) => {
                 message: 'Missing product id in request parameters'
             });
     }
+    req.product_id = productId;
     next();
 }
 
 const validProductId = (req, res, next) => {
-    const {productId} = req.params;
+    const {product_id} = req;
     let objId = undefined;
     try {
-        objId = new mongoose.Types.ObjectId(productId);
+        objId = new mongoose.Types.ObjectId(product_id);
     } catch (err) {
-        log.log('info', 'GET PRODUCT', 'provided product ID is invalid; productId:', productId);
+        log.log('info', 'GET PRODUCT', 'provided product ID is invalid; productId:', product_id);
         return res
             .status(httpStatus.BAD_REQUEST)
             .json({
                 message: 'Provided product identifier is invalid'
             });
     }
-    if (objId.toString() !== productId) {
-        log.log('info', 'GET PRODUCT', 'provided product ID is invalid; productId:', productId);
+    if (objId.toString() !== product_id) {
+        log.log('info', 'GET PRODUCT', 'provided product ID is invalid; productId:', product_id);
         return res
             .status(httpStatus.BAD_REQUEST)
             .json({
@@ -41,7 +42,7 @@ const validProductId = (req, res, next) => {
     next();
 }
 
-const getProductData = async (req, res) => {
+const fetchProductData = async (req, res, next) => {
     const {productId} = req.params;
     const projection = {
         created_at: 0,
@@ -67,15 +68,19 @@ const getProductData = async (req, res) => {
                 message: `Product with id ${productId} does not exist`
             });
     }
-    // Make response with product data.
-    return res
+    req.product = product['_doc'];
+    next();
+}
+
+const sendSingleProductResponse = (req, res) => {
+    res
         .status(httpStatus.OK)
         .json({
-            ...product['_doc']
+            ...req.product
         });
 }
 
-const getAllProductsSummary = async (req, res) => {
+const fetchProductsSummary = async (req, res, next) => {
     const filter = {}
     const projection = {
         name: 1,
@@ -94,29 +99,38 @@ const getAllProductsSummary = async (req, res) => {
                 message: 'Internal error while fetching list of available products'
             });
     }
-    return res
+    req.products = products.map(product => product['_doc']);
+    next();
+}
+
+const sendProductsSummaryResponse = (req, res) => {
+    res
         .status(httpStatus.OK)
         .json(
-            products.map(product => product['_doc'])
+            req.products
         );
 }
 
 const getProduct = [
-    requireProductId,
+    requireProductIdInParams,
     validProductId,
-    getProductData
+    fetchProductData,
+    sendSingleProductResponse
 ];
 
 const getProductsSummary = [
-    getAllProductsSummary
+    fetchProductsSummary,
+    sendProductsSummaryResponse
 ];
 
 module.exports = {
     getProductsSummary,
     getProduct,
     // Export single functions for testing purposes.
-    requireProductId,
+    requireProductIdInParams,
     validProductId,
-    getProductData,
-    getAllProductsSummary
+    fetchProductData,
+    sendSingleProductResponse,
+    fetchProductsSummary,
+    sendProductsSummaryResponse
 };

@@ -5,20 +5,9 @@ const History = require('../../data/models/history');
 const {
     userIsVerified
 } = require('../../middleware/authenticate');
-
-
-const requireProductIdInParams = (req, res, next) => {
-    const {productId} = req.params;
-    if (!productId) {
-        return res
-            .status(httpStatus.BAD_REQUEST)
-            .json({
-                message: 'Unable to fetch history for product since productID is missing'
-            });
-    }
-    req.product_id = productId;
-    next();
-}
+const {
+    requireProductIdInParams
+} = require('../products/get');
 
 const fetchHistory = async (req, res, next) => {
     const {product_id} = req;
@@ -62,7 +51,6 @@ const getHistory = [
 module.exports = {
     getHistory,
     // Export single functions for testing
-    requireProductIdInParams,
     fetchHistory,
     sendResponse
 };

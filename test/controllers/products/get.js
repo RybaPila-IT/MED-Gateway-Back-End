@@ -9,10 +9,12 @@ const log = require('npmlog');
 const httpMocks = require('node-mocks-http');
 const Product = require('../../../data/models/product');
 const {
-    requireProductId,
+    requireProductIdInParams,
     validProductId,
-    getProductData,
-    getAllProductsSummary
+    fetchProductData,
+    fetchProductsSummary,
+    sendProductsSummaryResponse,
+    sendSingleProductResponse
 } = require('../../../controllers/products/get');
 
 // Turn off logging for testing
@@ -29,12 +31,12 @@ describe('Test get product controller', function () {
         );
     });
 
-    describe('Test require product id', function () {
+    describe('Test require product id in params', function () {
 
         it('Should return BAD_REQUEST with "message" in JSON res', function (done) {
             const {req, res} = httpMocks.createMocks();
 
-            requireProductId(req, res);
+            requireProductIdInParams(req, res);
 
             expect(res._getStatusCode()).to.be.equal(httpStatus.BAD_REQUEST);
             expect(res._isJSON()).to.be.true;
@@ -42,18 +44,25 @@ describe('Test get product controller', function () {
             done();
         });
 
-        it('Should call next', function (done) {
+        it('Should set product_id in req', function (done) {
             const {req, res} = httpMocks.createMocks({params: {productId: '123'}});
 
-            requireProductId(req, res, done);
+            requireProductIdInParams(req, res, function () {
+            });
+
+            expect(req).to.have.property('product_id');
+            expect(req.product_id).to.be.equal('123');
+            done();
         });
 
     });
 
     describe('Test valid product id', function () {
 
-        it('Should call next', function (done) {
-            const {req, res} = httpMocks.createMocks({params: {productId: '537eed02ed345b2e039652d2'}});
+        it('Should pass validation', function (done) {
+            const {req, res} = httpMocks.createMocks();
+            // Preparing the request
+            req.product_id = '537eed02ed345b2e039652d2';
 
             validProductId(req, res, done);
         });
@@ -77,7 +86,7 @@ describe('Test get product controller', function () {
 
     });
 
-    describe('Test get product data', function () {
+    describe('Test fetch product data', function () {
 
         let productId = undefined;
 
@@ -97,22 +106,22 @@ describe('Test get product controller', function () {
         it('Should return BAD_REQUEST with "message" in JSON res', async function () {
             const {req, res} = httpMocks.createMocks({params: {productId: '537eed02ed345b2e039652d2'}});
 
-            await getProductData(req, res);
+            await fetchProductData(req, res);
 
             expect(res._getStatusCode()).to.equal(httpStatus.BAD_REQUEST);
             expect(res._isJSON()).to.be.true;
             expect(res._getJSONData()).to.have.property('message');
         });
 
-        it('Should return OK with product data in JSON res', async function () {
+        it('Should set product in req', async function () {
             const {req, res} = httpMocks.createMocks({params: {productId}});
 
-            await getProductData(req, res);
+            await fetchProductData(req, res, function (){
+            });
 
-            expect(res._getStatusCode()).to.be.equal(httpStatus.OK);
-            expect(res._isJSON()).to.be.true;
-            expect(res._getJSONData()).to.include({
-                _id: productId.toString(),
+            expect(req).to.have.property('product');
+            expect(req.product).to.deep.include({
+                _id: productId,
                 name: 'test',
                 short_description: 'test',
                 full_description: 'test',
@@ -128,6 +137,30 @@ describe('Test get product controller', function () {
         });
 
     });
+
+    describe('Test send single product response', function () {
+
+        it('Should send OK with product in JSON res', function (done) {
+            const {req, res} = httpMocks.createMocks();
+            // Preparing the req
+            req.product = {
+                _id: '123',
+                rest: 'rest'
+            };
+
+            sendSingleProductResponse(req, res);
+
+            expect(res._getStatusCode()).to.be.equal(httpStatus.OK);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.include({
+                _id: '123',
+                rest: 'rest'
+            });
+            done();
+        })
+
+    });
+
 
     describe('Test get all products summary', function () {
 
@@ -158,23 +191,23 @@ describe('Test get product controller', function () {
             products[1]._id = p2._id;
         });
 
-        it('Should return OK with array of products in JSON res', async function () {
+        it('Should set products in req', async function () {
             const {req, res} = httpMocks.createMocks();
 
-            await getAllProductsSummary(req, res);
+            await fetchProductsSummary(req, res, function (){
+            });
 
-            expect(res._getStatusCode()).to.be.equal(httpStatus.OK);
-            expect(res._isJSON()).to.be.true;
-            expect(res._getJSONData()).to.be.an('array').that.deep.includes.members([
+            expect(req).to.have.property('products');
+            expect(req.products).to.be.an('array').that.deep.includes.members([
                 {
-                    _id: products[0]._id.toString(),
+                    _id: products[0]._id,
                     name: 'Product_1',
                     short_description: 'Short1',
                     is_active: true,
                     photo_url: 'Url1'
                 },
                 {
-                    _id: products[1]._id.toString(),
+                    _id: products[1]._id,
                     name: 'Product_2',
                     short_description: 'Short2',
                     is_active: false,
@@ -186,6 +219,23 @@ describe('Test get product controller', function () {
         after(async function () {
             await Product.deleteMany({}).exec();
         });
+
+    });
+
+    describe('Test send products summary response', function () {
+
+        it('Should return OK with products in JSON res', function () {
+            const {req, res} = httpMocks.createMocks();
+            // Preparing the req
+            req.products = ['1', '2', '3'];
+
+            sendProductsSummaryResponse(req, res);
+
+            expect(res._getStatusCode()).to.be.equal(httpStatus.OK);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.be.an('array').and.to.include.members(['1', '2', '3']);
+        });
+
 
     });
 
