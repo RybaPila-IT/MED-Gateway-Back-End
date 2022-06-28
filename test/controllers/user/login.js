@@ -7,9 +7,7 @@ const bcrypt = require('bcrypt');
 const expect = chai.expect;
 const httpMocks = require('node-mocks-http');
 const mongoose = require('mongoose');
-const {
-    MongoMemoryServer
-} = require('mongodb-memory-server');
+const {MongoMemoryServer} = require('mongodb-memory-server');
 const log = require('npmlog');
 const User = require('../../../data/models/user');
 const EnvKeys = require('../../../env/keys');
@@ -37,7 +35,7 @@ describe('Test user login controller', function () {
 
     describe('Test require login data', function () {
 
-        it('Should set email and password on req', function (done) {
+        it('Should set email and password on req.context', function (done) {
             const emailValue = 'some@email';
             const passwordValue = 'password';
 
@@ -47,15 +45,15 @@ describe('Test user login controller', function () {
                     password: passwordValue
                 }
             }, {});
+            // Preparing the req
+            req.context = {};
 
             requireLoginData(req, res, function () {
                 // Req should have those properties.
-                expect(req).to.have.property('email');
-                expect(req).to.have.property('password');
-
-                const {email, password} = req;
-                expect(email).to.be.string(emailValue)
-                expect(password).to.be.string(passwordValue)
+                expect(req.context).to.have.property('email');
+                expect(req.context).to.have.property('password');
+                expect(req.context.email).to.be.string(emailValue);
+                expect(req.context.password).to.be.string(passwordValue);
                 done();
             });
         });
@@ -71,6 +69,8 @@ describe('Test user login controller', function () {
                 delete reqBody[key]
                 // Actual test starts here.
                 const {req, res} = httpMocks.createMocks({body: reqBody}, {});
+                // Preparing the req
+                req.context = {};
 
                 requireLoginData(req, res);
 
@@ -103,7 +103,9 @@ describe('Test user login controller', function () {
         it('Should respond with UNAUTHORIZED and have "message" field in JSON res', async function () {
             const {req, res} = httpMocks.createMocks();
             // Set email field in req since fetchUserModelByEmail uses it.
-            req.email = 'some_other@email';
+            req.context = {
+                email: 'some_other@email'
+            };
 
             await fetchUserModelByEmail(req, res);
 
@@ -112,16 +114,18 @@ describe('Test user login controller', function () {
             expect(res._getJSONData()).to.have.property('message');
         });
 
-        it('Should set user in req', async function () {
+        it('Should set user in req.context', async function () {
             const {req, res} = httpMocks.createMocks();
             // Set email field in req since fetchUserModelByEmail uses it.
-            req.email = 'some@email';
+            req.context = {
+                email: 'some@email'
+            };
 
             await fetchUserModelByEmail(req, res, function () {
             });
 
-            expect(req).to.have.property('user');
-            expect(req.user._doc).to.include({
+            expect(req.context).to.have.property('user');
+            expect(req.context.user._doc).to.include({
                 name: 'name',
                 surname: 'surname',
                 email: 'some@email',
@@ -144,24 +148,26 @@ describe('Test user login controller', function () {
             const salt = 10;
             const hashedPassword = await bcrypt.hash(originalPassword, salt);
             const {req, res} = httpMocks.createMocks();
-            const user = {
-                _id: '123',
-                name: 'name',
-                surname: 'hello',
-                organization: 'test',
-                email: 'sample@email',
-                password: hashedPassword,
-                status: 'verified'
-            };
+            let nextCalled = false;
             // Preparing the request
-            req.user = user;
-            req.password = originalPassword;
+            req.context = {
+                user: {
+                    _id: '123',
+                    name: 'name',
+                    surname: 'hello',
+                    organization: 'test',
+                    email: 'sample@email',
+                    password: hashedPassword,
+                    status: 'verified'
+                },
+                password: originalPassword
+            };
 
             await verifyUserPassword(req, res, function () {
+                nextCalled = true;
             });
 
-            expect(res._getStatusCode()).to.equal(httpStatus.OK);
-            expect(req.user).include(user);
+            expect(nextCalled).to.be.true;
         });
 
         it('Should respond with UNAUTHORIZED with "message" field in JSON res', async function () {
@@ -171,16 +177,18 @@ describe('Test user login controller', function () {
             const hashedPassword = await bcrypt.hash(originalPassword, salt);
             const {req, res} = httpMocks.createMocks();
             // Prepare the request.
-            req.user = {
-                _id: '123',
-                name: 'name',
-                surname: 'hello',
-                organization: 'test',
-                email: 'sample@email',
-                password: hashedPassword,
-                status: 'verified'
+            req.context = {
+                user: {
+                    _id: '123',
+                    name: 'name',
+                    surname: 'hello',
+                    organization: 'test',
+                    email: 'sample@email',
+                    password: hashedPassword,
+                    status: 'verified'
+                },
+                password: invalidPassword
             };
-            req.password = invalidPassword;
 
             await verifyUserPassword(req, res);
 
@@ -193,47 +201,48 @@ describe('Test user login controller', function () {
 
     describe('Test create token', function () {
 
-        it('Should create token and place it in req', function (done) {
+        it('Should create token and place it in req.context', function (done) {
             const {req, res} = httpMocks.createMocks();
-            const user = {
-                _id: '123',
-                name: 'name',
-                surname: 'hello',
-                organization: 'test',
-                email: 'sample@email',
-                password: 'password',
-                status: 'verified'
-            };
             // Preparing the request
-            req.user = user;
+            req.context = {
+                user: {
+                    _id: '123',
+                    name: 'name',
+                    surname: 'hello',
+                    organization: 'test',
+                    email: 'sample@email',
+                    password: 'password',
+                    status: 'verified'
+                }
+            };
 
             createToken(req, res, function () {
-                expect(req).to.have.property('token');
-                // Check the token
-                const verified = jwt.verify(req.token, process.env[EnvKeys.jwtSecret]);
+            });
 
-                expect(verified).to.have.property('_id');
-                expect(verified).to.have.property('status');
-                expect(verified._id).to.equal(user._id);
-                expect(verified.status).to.equal(user.status);
+            expect(req.context).to.have.property('token');
+            // Check the token
+            const verified = jwt.verify(req.context.token, process.env[EnvKeys.jwtSecret]);
 
-                done();
-            })
+            expect(verified).to.have.property('_id');
+            expect(verified).to.have.property('status');
+            expect(verified._id).to.equal('123');
+            expect(verified.status).to.equal('verified');
+            done();
         });
     });
 
     describe('Test send response', function () {
 
         it('Should send a valid response', function (done) {
-
-            const token = 'token';
             const {req, res} = httpMocks.createMocks();
             // Preparing the request.
-            req.token = token
-            req.user = {
-                _id: new mongoose.Types.ObjectId(),
-                name: 'test',
-                surname: 'test'
+            req.context = {
+                user: {
+                    _id: new mongoose.Types.ObjectId(),
+                    name: 'test',
+                    surname: 'test'
+                },
+                token: 'token_val'
             }
 
             sendResponse(req, res);
@@ -241,9 +250,8 @@ describe('Test user login controller', function () {
             expect(res._getStatusCode()).to.equal(httpStatus.OK);
             expect(res._isJSON()).to.be.true;
             expect(res._getJSONData()).to.have.property('token');
-            expect(res._getJSONData()).to.include({token});
+            expect(res._getJSONData().token).to.be.equal('token_val');
             done();
-
         });
     });
 

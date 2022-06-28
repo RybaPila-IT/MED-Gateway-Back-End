@@ -22,13 +22,13 @@ const requireProductIdInParams = (req, res, next) => {
                 message: `Provided product ID ${productID} is invalid`
             });
     }
-    req.productID = productID;
+    req.context.productID = productID;
     next();
 }
 
 
 const fetchProduct = async (req, res, next) => {
-    const {productID} = req;
+    const {productID} = req.context;
     const projection = {
         created_at: 0,
         updated_at: 0,
@@ -53,7 +53,7 @@ const fetchProduct = async (req, res, next) => {
                 message: `Product with id ${productID} does not exist`
             });
     }
-    req.product = product;
+    req.context.product = product;
     next();
 }
 
@@ -61,7 +61,7 @@ const sendSingleProductResponse = (req, res) => {
     res
         .status(httpStatus.OK)
         .json({
-            ...req.product['_doc']
+            ...req.context.product['_doc']
         });
 }
 
@@ -84,7 +84,7 @@ const fetchProductsSummary = async (req, res, next) => {
                 message: 'Internal error while fetching list of available products'
             });
     }
-    req.products = products;
+    req.context.products = products;
     next();
 }
 
@@ -92,7 +92,7 @@ const sendProductsSummaryResponse = (req, res) => {
     res
         .status(httpStatus.OK)
         .json(
-            req.products.map(product => product['_doc'])
+            req.context.products.map(product => product['_doc'])
         );
     // Final logging
     log.log('info', 'GET PRODUCTS SUMMARY', 'Products summary has been sent successfully');

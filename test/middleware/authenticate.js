@@ -64,16 +64,18 @@ describe('Test authenticate middleware', function () {
             done();
         });
 
-        it('Should set decoded token in req', function (done) {
+        it('Should set decoded token in req.context', function (done) {
             const payload = {_id: '1', status: 'verified'};
             const key = process.env[EnvKeys.jwtSecret];
             const token = jwt.sign(payload, key);
 
             const {req, res} = httpMocks.createMocks({headers: {'Authorization': `Bearer ${token}`}});
+            // Preparing req
+            req.context = {}
 
             verifyUserToken(req, res, function () {
-                expect(req).to.have.property('token');
-                expect(req.token).to.include(payload);
+                expect(req.context).to.have.property('token');
+                expect(req.context.token).to.include(payload);
                 done();
             });
         });
@@ -85,10 +87,13 @@ describe('Test authenticate middleware', function () {
         it('Should respond with UNAUTHORIZED and "message" in JSON res', function (done) {
             const {req, res} = httpMocks.createMocks();
             // Preparing req
-            req.token = {
-                _id: '123',
-                status: 'unverified'
+            req.context = {
+                token: {
+                    _id: '123',
+                    status: 'unverified'
+                }
             };
+
             verifyUserStatus(req, res);
 
             expect(res._getStatusCode()).to.equal(httpStatus.UNAUTHORIZED);
@@ -100,10 +105,13 @@ describe('Test authenticate middleware', function () {
         it('Should pass verification', function (done) {
             const {req, res} = httpMocks.createMocks();
             // Preparing req
-            req.token = {
-                _id: '123',
-                status: 'verified'
+            req.context = {
+                token: {
+                    _id: '123',
+                    status: 'verified'
+                }
             };
+
             verifyUserStatus(req, res, done);
         });
 

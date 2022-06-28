@@ -2,12 +2,10 @@ const httpStatus = require('http-status-codes');
 const log = require('npmlog');
 
 const User = require('../../data/models/user');
-const {
-    userIsAuthenticated
-} = require('../../middleware/authenticate');
+const {userIsAuthenticated} = require('../../middleware/authenticate');
 
 const getUserData = async (req, res, next) => {
-    const {_id: userID} = req.token;
+    const {_id: userID} = req.context.token;
     const projection = {
         password: 0,
         registered_at: 0,
@@ -34,21 +32,22 @@ const getUserData = async (req, res, next) => {
                 message: 'Obtained invalid token'
             });
     }
-    req.user = user;
+    req.context.user = user;
     next();
 }
 
 
 const sendResponse = (req, res) => {
+    const {user} = req.context;
     res
         .status(httpStatus.OK)
         .json({
-            ...req.user['_doc']
+            ...user['_doc']
         });
     // Result log.
     log.log(
         'info', 'GET USER', 'Sent personal information about',
-        req.user.name, req.user.surname, req.user._id.toString()
+        user.name, user.surname, user._id.toString()
     );
 }
 

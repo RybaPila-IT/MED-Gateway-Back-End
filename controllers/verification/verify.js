@@ -23,12 +23,12 @@ const requireVerificationIdInParams = (req, res, next) => {
                 message: `Provided verification ID ${verifyID} is invalid`
             });
     }
-    req.verifyID = verifyID;
+    req.context.verifyID = verifyID;
     next();
 }
 
 const fetchVerificationById = async (req, res, next) => {
-    const {verifyID} = req;
+    const {verifyID} = req.context;
     let ver = undefined;
     try {
         ver = await Verification.findById(verifyID);
@@ -48,16 +48,15 @@ const fetchVerificationById = async (req, res, next) => {
                 message: `Verification with ID ${verifyID} does not exist`
             });
     }
-    req.verification = ver;
+    req.context.verification = ver;
     next();
 }
 
 
-
 const verifyUserAccount = async (req, res, next) => {
+    const {verification} = req.context;
     const update = { status: 'verified' };
     const options = { new: true };
-    const {verification} = req;
     let user = undefined;
     try {
         user = await User.findByIdAndUpdate(verification.user_id, update, options).exec();
@@ -83,7 +82,7 @@ const verifyUserAccount = async (req, res, next) => {
 
 
 const deleteVerification = async (req, res, next) => {
-    const {verification} = req;
+    const {verification} = req.context;
     try {
         await verification.delete();
     } catch (err) {

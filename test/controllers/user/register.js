@@ -70,6 +70,8 @@ describe('Test user register controller', function () {
                 delete reqBody[key]
                 // Actual test starts here.
                 const {req, res} = httpMocks.createMocks({body: reqBody}, {});
+                // Preparing the req
+                req.context = {};
 
                 requireRegisterData(req, res);
 
@@ -83,7 +85,7 @@ describe('Test user register controller', function () {
             }
         });
 
-        it('Should call next and pass checks', function (done) {
+        it('Should call next and place body inside req.context', function (done) {
             const body = {
                 name: 'test',
                 surname: 'test',
@@ -92,36 +94,50 @@ describe('Test user register controller', function () {
                 organization: 'test'
             };
             const {req, res} = httpMocks.createMocks({body}, {});
+            // Preparing the req
 
             requireRegisterData(req, res, done);
+
+            expect(req.context).to.include({
+                name: 'test',
+                surname: 'test',
+                email: 'some@email',
+                password: 'password',
+                organization: 'test'
+            });
         });
     });
 
     describe('Test gen salt', function () {
 
-        it('Should generate salt in req', async function () {
+        it('Should generate salt and place it in req.context', async function () {
             const {req, res} = httpMocks.createMocks();
+            // Preparing the req
+            req.context = {};
 
             await genSalt(req, res, function () {
             });
 
-            expect(req).to.have.property('salt');
+            expect(req.context).to.have.property('salt');
         });
 
     });
 
     describe('Test hash password', function () {
 
-        it('Should hash the password', async function () {
+        it('Should hash the password and change original password present in req.context', async function () {
             const originalPassword = 'password';
             const {req, res} = httpMocks.createMocks({body: {password: originalPassword}});
             // Preparing the request
-            req.salt = 10;
+            req.context = {
+                password: originalPassword,
+                salt: 10
+            };
 
             await hashPassword(req, res, function () {
             });
 
-            expect(req.body.password).to.not.equal(originalPassword);
+            expect(req.context.password).to.not.equal(originalPassword);
         });
 
     });
@@ -140,14 +156,15 @@ describe('Test user register controller', function () {
         });
 
         it('Should create user', async function () {
-            const user = {
+            const {req, res} = httpMocks.createMocks();
+            // Preparing the req
+            req.context = {
                 name: 'name',
                 surname: 'surname',
                 email: 'some2@email',
                 password: 'password',
                 organization: 'org'
-            }
-            const {req, res} = httpMocks.createMocks({body: user});
+            };
 
             await createUser(req, res, function () {
             });
@@ -156,21 +173,28 @@ describe('Test user register controller', function () {
 
             expect(addedUser).not.to.be.undefined;
             expect(addedUser).not.to.be.null;
-            expect(addedUser['_doc']).to.include(user);
+            expect(addedUser['_doc']).to.include({
+                name: 'name',
+                surname: 'surname',
+                email: 'some2@email',
+                password: 'password',
+                organization: 'org'
+            });
             expect(addedUser['_doc'].status).to.be.equal('unverified');
 
             await addedUser.remove();
         });
 
         it('Should return CONFLICT with "message" in JSON res', async function () {
-            const user = {
+            const {req, res} = httpMocks.createMocks();
+            // Preparing the req
+            req.context = {
                 name: 'name',
                 surname: 'surname',
                 email: 'some@email',
                 password: 'password',
                 organization: 'org'
-            }
-            const {req, res} = httpMocks.createMocks({body: user});
+            };
 
             await createUser(req, res);
 
@@ -180,14 +204,15 @@ describe('Test user register controller', function () {
         });
 
         it('Should return INTERNAL_SERVER_ERROR with "message" in JSON res', async function() {
-            const user = {
+            const {req, res} = httpMocks.createMocks();
+            // Preparing the req
+            req.context = {
                 name: 'this name is definitely too long to fit into my database so error is needed',
                 surname: 'surname',
                 email: 'some@email',
                 password: 'password',
                 organization: 'org'
-            }
-            const {req, res} = httpMocks.createMocks({body: user});
+            };
 
             await createUser(req, res);
 
@@ -206,11 +231,13 @@ describe('Test user register controller', function () {
 
         it('Should return CREATED response with "message" in JSON res', function (done) {
             const {req, res} = httpMocks.createMocks();
-            // Preparing req
-            req.user = {
-                name: 'test',
-                surname: 'test',
-                _id: new mongoose.Types.ObjectId()
+            // Preparing the req
+            req.context = {
+                user: {
+                    name: 'test',
+                    surname: 'test',
+                    _id: new mongoose.Types.ObjectId()
+                }
             };
 
             sendResponse(req, res);

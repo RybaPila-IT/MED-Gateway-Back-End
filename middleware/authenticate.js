@@ -31,14 +31,14 @@ const verifyUserToken = (req, res, next) => {
                 message: 'Page not found'
             });
     }
-    req.token = token;
+    req.context.token = token;
     next();
 }
 
 
 const verifyUserStatus = (req, res, next) => {
     const verifiedStatus = 'verified';
-    const {status} = req.token;
+    const {status} = req.context.token;
 
     if (status !== verifiedStatus) {
         return res

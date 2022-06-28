@@ -5,16 +5,9 @@ const uuid = require('uuid');
 const EnvKeys = require('../../env/keys');
 const Endpoints = require('../../env/endpoints');
 const log = require('npmlog');
-const {
-    requireProductIdInParams,
-    fetchProduct
-} = require('./get')
-const {
-    fetchHistory
-} = require('../history/get');
-const {
-    userIsVerified
-} = require('../../middleware/authenticate');
+const {requireProductIdInParams, fetchProduct} = require('./get')
+const {fetchHistory} = require('../history/get');
+const {userIsVerified} = require('../../middleware/authenticate');
 
 class FetchResponseError extends Error {
     constructor(resp) {
@@ -39,8 +32,8 @@ const productStoresPhoto = {
 }
 
 const productIsActive = (req, res, next) => {
-    const {product_doc} = req;
-    if (!product_doc.is_active) {
+    const {product} = req.context;
+    if (!product.is_active) {
         return res
             .status(httpStatus.BAD_REQUEST)
             .json({
@@ -70,12 +63,20 @@ const ensurePredictionPropertiesArePresent = (req, res, next) => {
                 });
         }
     }
+    req.context = {
+        ...req.context,
+        patient_name,
+        patient_surname,
+        description,
+        data,
+        date
+    };
     next();
 }
 
 
 const convertImageData = async (req, res, next) => {
-    const {data} = req.body;
+    const {data} = req.context;
     const token = process.env[EnvKeys.dicomConverterAccessToken];
     const dicomConverterURL = `${Endpoints.DicomConverter}/convert`
     let converterResponse = undefined;
@@ -100,15 +101,14 @@ const convertImageData = async (req, res, next) => {
     }
     // Set the response bytes to the actual data now.
     // Previous DICOM bytes are redundant.
-    req.body.data = await converterResponse.json();
+    req.context.data = await converterResponse.json();
     // Continue the pipeline execution.
     next();
 }
 
 
 const makePrediction = async (req, res, next) => {
-    const {productID} = req;
-    const {data} = req.body;
+    const {productID, data} = req.context;
     const productEndpointUrl = `${Endpoints.Products[productID]}/predict`;
     const accessToken = process.env[EnvKeys.productsAccessTokens[productID]];
     let predictionResponse = undefined;
@@ -131,26 +131,35 @@ const makePrediction = async (req, res, next) => {
                 message: 'Internal error while making prediction on the provided data'
             });
     }
-    // Set the response bytes to the actual prediction
-    // since converted image is redundant now.
-    req.body.data = await predictionResponse.json();
+    // Response has uniformed API in a form:
+    // "prediction: {...}
+    // "photo": "..."
+    const {prediction, photo} = await predictionResponse.json();
+    // Store the result into context.
+    req.context = {
+        ...req.context,
+        prediction,
+        photo
+    };
     // Continue pipeline execution.
     next();
 }
 
 
 const storePredictionPhotoResultInCloudinary = async (req, res, next) => {
-    const {productID} = req;
+    const {productID, photo} = req.context;
     // End execution if we do not need to store photo.
     if (!productStoresPhoto[productID]) {
-        req.body.photo_url = '';
-        req.body.has_photo = false;
+        req.context = {
+            ...req.context,
+            photo_url: '',
+            has_photo: false
+        };
         // Continue the execution pipeline.
         return next();
     }
     // Identifier of the asset will be random.
-    const {photo} = req.body.data;
-    const {_id: userID} = req.token;
+    const {_id: userID} = req.context.token;
     const public_id = uuid.v4();
     const file = `data:image/png;base64,${photo}`;
     const folder = `predictions/${userID}`;
@@ -170,17 +179,21 @@ const storePredictionPhotoResultInCloudinary = async (req, res, next) => {
     }
     const {secure_url} = photoResult;
     // Store the url in the request body for adding in the DB.
-    req.body.photo_url = secure_url;
-    req.body.has_photo = true;
+    req.context = {
+        ...req.context,
+        photo_url: secure_url,
+        has_photo: true
+    };
     // Continue the execution pipeline.
     next();
 }
 
 
 const storePredictionResultInDatabase = async (req, res, next) => {
-    const {patient_name, patient_surname, description, has_photo, photo_url, date} = req.body;
-    const {prediction} = req.body.data;
-    const {history} = req;
+    const {
+        history, patient_name, patient_surname, description,
+        has_photo, photo_url, date, prediction
+    } = req.context;
     try {
         await history.updateOne({
             $push: {
@@ -208,11 +221,8 @@ const storePredictionResultInDatabase = async (req, res, next) => {
 
 
 const sendResponse = (req, res) => {
-    const {_id: userID} = req.token;
-    const {productID} = req;
-    const {photo_url} = req.body;
-    const {prediction} = req.body.data;
-
+    const {productID, photo_url, prediction, token} = req.context;
+    const {_id: userID} = token;
     res
         .status(httpStatus.OK)
         .json({

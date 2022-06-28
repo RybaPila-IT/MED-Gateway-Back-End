@@ -4,9 +4,7 @@ const mongoose = require("mongoose");
 const httpStatus = require('http-status-codes');
 const chai = require('chai');
 const expect = chai.expect;
-const {
-    MongoMemoryServer
-} = require('mongodb-memory-server');
+const {MongoMemoryServer} = require('mongodb-memory-server');
 const mockery = require('mockery');
 const nodemailerMock = require('nodemailer-mock');
 const log = require('npmlog');
@@ -55,6 +53,8 @@ describe('Test verification send controller', function () {
 
         it('Should return BAD_REQUEST with "message" in JSON res', function (done) {
             const {req, res} = httpMocks.createMocks();
+            // Preparing the req
+            req.context = {};
 
             requireEmailInBody(req, res);
 
@@ -64,12 +64,14 @@ describe('Test verification send controller', function () {
             done();
         });
 
-        it('Should call next and set email in req', function (done) {
+        it('Should call next and set email in req.context', function (done) {
             const {req, res} = httpMocks.createMocks({body: {email: 'some@email'}});
+            // Preparing the req
+            req.context = {};
 
             requireEmailInBody(req, res, function () {
-                expect(req).to.have.property('email');
-                expect(req.email).to.equal('some@email');
+                expect(req.context).to.have.property('email');
+                expect(req.context.email).to.equal('some@email');
                 done();
             });
         });
@@ -78,11 +80,13 @@ describe('Test verification send controller', function () {
 
     describe('Test create verification', function () {
 
-        it('Should create verification and set verification in req', async function () {
+        it('Should create verification and set verification in req.context', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.user = {
-                _id: '537eed02ed345b2e039652d2'
+            req.context = {
+                user: {
+                    _id: '537eed02ed345b2e039652d2'
+                }
             };
 
             await createVerification(req, res, function() {
@@ -91,15 +95,17 @@ describe('Test verification send controller', function () {
             const verification = await Verification.findOne({user_id: '537eed02ed345b2e039652d2'});
 
             expect(verification).not.to.be.undefined;
-            expect(req).to.have.property('verification');
-            expect(req.verification._doc).to.deep.equal(verification['_doc']);
+            expect(req.context).to.have.property('verification');
+            expect(req.context.verification._doc).to.deep.equal(verification['_doc']);
         });
 
         it('Should return INTERNAL_SERVER_ERROR with "message" in JSON res', async function() {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.user = {
-                _id: 'hello'
+            req.context = {
+                user: {
+                    _id: 'hello'
+                }
             };
 
             await createVerification(req, res, function() {
@@ -121,9 +127,11 @@ describe('Test verification send controller', function () {
         it('Should send verification email', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.email = 'someEmail@gmail.com';
-            req.verification = {
-                _id: '12345'
+            req.context = {
+                email: 'someEmail@gmail.com',
+                verification: {
+                    _id: '12345'
+                }
             };
 
             await sendVerificationEmail(req, res, function() {
@@ -145,9 +153,11 @@ describe('Test verification send controller', function () {
 
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.email = 'someEmail@gmail.com';
-            req.verification = {
-                _id: '12345'
+            req.context = {
+                email: 'someEmail@gmail.com',
+                verification: {
+                    _id: '12345'
+                }
             };
 
             await sendVerificationEmail(req, res);

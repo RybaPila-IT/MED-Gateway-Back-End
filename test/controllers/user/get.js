@@ -43,19 +43,21 @@ describe('Test get user controller', function () {
                 });
         });
 
-        it('Should set user in req object', async function () {
+        it('Should set user in req.context', async function () {
             const {req, res} = httpMocks.createMocks();
             // Prepare request
-            req.token = {
-                _id: user._id.toString()
+            req.context = {
+                token: {
+                    _id: user._id.toString()
+                }
             };
 
-            await getUserData(req, res, function() {
+            await getUserData(req, res, function () {
             });
 
-            expect(req).to.have.property('token');
-            expect(req).to.have.property('user');
-            expect(req.user._doc).to.deep.include({
+            expect(req.context).to.have.property('token');
+            expect(req.context).to.have.property('user');
+            expect(req.context.user._doc).to.deep.include({
                 _id: user._id,
                 name: 'test',
                 surname: 'test',
@@ -63,15 +65,17 @@ describe('Test get user controller', function () {
                 organization: 'test',
                 status: 'verified'
             });
-            expect(req.user._doc).to.not.have.property('password');
+            expect(req.context.user._doc).to.not.have.property('password');
         });
 
         it('Should return BAD_REQUEST with "message" field in JSON', async function () {
             const {req, res} = httpMocks.createMocks();
             // Prepare request
-            req.token = {
-                // Setting random _id
-                _id: new mongoose.Types.ObjectId().toString()
+            req.context = {
+                token: {
+                    // Setting random _id
+                    _id: new mongoose.Types.ObjectId().toString()
+                }
             };
 
             await getUserData(req, res)
@@ -81,12 +85,14 @@ describe('Test get user controller', function () {
             expect(res._getJSONData()).to.have.property('message');
         });
 
-        it('Should return INTERNAL_SERVER_ERROR with "message in JSON', async function() {
+        it('Should return INTERNAL_SERVER_ERROR with "message in JSON', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing request
-            req.token = {
-                // Setting invalid _id
-                _id: 'not-a-id'
+            req.context = {
+                token: {
+                    // Setting invalid _id
+                    _id: 'not-a-id'
+                }
             };
 
             await getUserData(req, res)
@@ -106,25 +112,26 @@ describe('Test get user controller', function () {
     describe('Test send response', function () {
 
         it('Should send OK response', function (done) {
-
             const {req, res} = httpMocks.createMocks();
             // Setting up the req
-            req.user = {
-                _doc: {
+            req.context = {
+                user: {
+                    _doc: {
+                        _id: new mongoose.Types.ObjectId(),
+                        name: 'test',
+                        surname: 'test',
+                        email: 'test@email',
+                        organization: 'test',
+                        status: 'verified'
+                    },
                     _id: new mongoose.Types.ObjectId(),
                     name: 'test',
                     surname: 'test',
                     email: 'test@email',
                     organization: 'test',
-                    status: 'verified'
-                },
-                _id: new mongoose.Types.ObjectId(),
-                name: 'test',
-                surname: 'test',
-                email: 'test@email',
-                organization: 'test',
-                status: 'verified',
-                other: 'other stuff'
+                    status: 'verified',
+                    other: 'other stuff'
+                }
             };
 
             sendResponse(req, res)

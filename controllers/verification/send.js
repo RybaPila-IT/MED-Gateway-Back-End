@@ -3,13 +3,8 @@ const log = require('npmlog');
 
 const Endpoints = require("../../env/endpoints");
 const Verification = require('../../data/models/verification');
-const {
-    defaultOptions,
-    transporter
-} = require('../../mail/transporter');
-const {
-    fetchUserModelByEmail
-} = require('../user/login');
+const {defaultOptions, transporter} = require('../../mail/transporter');
+const {fetchUserModelByEmail} = require('../user/login');
 
 
 const requireEmailInBody = (req, res, next) => {
@@ -21,16 +16,20 @@ const requireEmailInBody = (req, res, next) => {
                 message: 'Email property is missing'
             });
     }
-    req.email = email;
+    req.context.email = email;
     next();
 }
 
 
 const createVerification = async (req, res, next) => {
-    const {_id: userID} = req.user;
+    const {user} = req.context;
+    const {_id: userID} = user;
     let ver = undefined;
     try {
-        ver = await Verification.findOneAndUpdate({user_id: userID}, {$set: {user_id: userID}}, {new: true, upsert: true});
+        ver = await Verification.findOneAndUpdate({user_id: userID}, {$set: {user_id: userID}}, {
+            new: true,
+            upsert: true
+        });
     } catch (err) {
         log.log('error', 'SEND VERIFICATION', 'Error at createVerification:', err.message);
         return res
@@ -47,13 +46,13 @@ const createVerification = async (req, res, next) => {
                 message: 'Internal error while sending verification email'
             });
     }
-    req.verification = ver;
+    req.context.verification = ver;
     next();
 }
 
 const sendVerificationEmail = async (req, res, next) => {
-    const {_id: verificationID} = req.verification;
-    const {email} = req;
+    const {verification, email} = req.context;
+    const {_id: verificationID} = verification;
     const link = `${Endpoints.MedGatewayBackend}/api/verify/${verificationID}`;
     const options = {
         ...defaultOptions,

@@ -4,9 +4,7 @@ const mongoose = require('mongoose');
 const httpStatus = require('http-status-codes');
 const chai = require('chai');
 const expect = chai.expect;
-const {
-    MongoMemoryServer
-} = require('mongodb-memory-server');
+const {MongoMemoryServer} = require('mongodb-memory-server');
 const log = require('npmlog');
 const httpMocks = require('node-mocks-http');
 const Verification = require('../../../data/models/verification');
@@ -36,18 +34,22 @@ describe('Test verification verify controller', function () {
 
     describe('Test require verification data', function () {
 
-        it('Should call next and set verifyID in req', function (done) {
+        it('Should call next and set verifyID in req.context', function (done) {
             const {req, res} = httpMocks.createMocks({params: {verifyID: '551137c2f9e1fac808a5f572'}});
+            // Preparing the req
+            req.context = {};
 
             requireVerificationIdInParams(req, res, function () {
-                expect(req).to.have.property('verifyID');
-                expect(req.verifyID).to.equal('551137c2f9e1fac808a5f572');
+                expect(req.context).to.have.property('verifyID');
+                expect(req.context.verifyID).to.equal('551137c2f9e1fac808a5f572');
                 done();
             });
         });
 
         it('Should return BAD_REQUEST with "message" in JSON res', function (done) {
             const {req, res} = httpMocks.createMocks();
+            // Preparing the req
+            req.context = {};
 
             requireVerificationIdInParams(req, res);
 
@@ -59,6 +61,8 @@ describe('Test verification verify controller', function () {
 
         it('Should return BAD_REQUEST with "message" in JSON res', function (done) {
             const {req, res} = httpMocks.createMocks({params: {verifyID: '123'}});
+            // Preparing the req
+            req.context = {};
 
             requireVerificationIdInParams(req, res);
 
@@ -79,24 +83,28 @@ describe('Test verification verify controller', function () {
         });
 
 
-        it('Should set verification in req', async function () {
+        it('Should set verification in req.context', async function () {
 
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.verifyID = verifyDOC._id.toString();
+            req.context = {
+                verifyID: verifyDOC._id.toString()
+            };
 
             await fetchVerificationById(req, res, function () {
             });
 
-            expect(req).to.have.property('verification');
-            expect(req.verification._doc).to.deep.equal(verifyDOC._doc);
+            expect(req.context).to.have.property('verification');
+            expect(req.context.verification._doc).to.deep.equal(verifyDOC._doc);
         });
 
         it('Should return BAD_REQUEST with "message" in JSON res', async function () {
 
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.verifyID = '537eed02ed345b2e039652d2';
+            req.context = {
+                verifyID: '537eed02ed345b2e039652d2'
+            };
 
             await fetchVerificationById(req, res);
 
@@ -109,7 +117,9 @@ describe('Test verification verify controller', function () {
 
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.verifyID = 'hello';
+            req.context = {
+                verifyID: 'hello'
+            };
 
             await fetchVerificationById(req, res);
 
@@ -143,8 +153,10 @@ describe('Test verification verify controller', function () {
         it('Should return BAD_REQUEST with "message" in JSON res', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the request
-            req.verification = {
-                user_id: '537eed02ed345b2e039652d2'
+            req.context = {
+                verification: {
+                    user_id: '537eed02ed345b2e039652d2'
+                }
             };
 
             await verifyUserAccount(req, res);
@@ -157,8 +169,10 @@ describe('Test verification verify controller', function () {
         it('Should return INTERNAL_SERVER_ERROR with "message" in JSON res', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the request
-            req.verification = {
-                user_id: 'hello'
+            req.context = {
+                verification: {
+                    user_id: 'hello'
+                }
             };
 
             await verifyUserAccount(req, res);
@@ -171,14 +185,16 @@ describe('Test verification verify controller', function () {
         it('Should verify user and call next', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the request
-            req.verification = {
-                user_id: userID
+            req.context = {
+                verification: {
+                    user_id: userID
+                }
             };
 
             await verifyUserAccount(req, res, function () {
             });
 
-            const user = await User.findById(userID).exec();
+            const user = await User.findById(userID);
 
             expect(user.status).to.be.equal('verified');
         });
@@ -200,7 +216,9 @@ describe('Test verification verify controller', function () {
         it('Should delete verification entry', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.verification = verificationDOC;
+            req.context = {
+                verification: verificationDOC
+            };
 
             await deleteVerification(req, res, function () {
             });
@@ -213,8 +231,10 @@ describe('Test verification verify controller', function () {
         it('Should not delete verification entry (1)', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.verification = {
-                delete: function () {
+            req.context = {
+                verification: {
+                    delete: function () {
+                    }
                 }
             };
 
@@ -230,9 +250,11 @@ describe('Test verification verify controller', function () {
         it('Should not delete verification entry (2)', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.verification = {
-                delete: async function() {
-                    await Verification.deleteOne({_id: 'hello'});
+            req.context = {
+                verification: {
+                    delete: async function () {
+                        await Verification.deleteOne({_id: 'hello'});
+                    }
                 }
             };
 
@@ -255,6 +277,8 @@ describe('Test verification verify controller', function () {
 
         it('Should return OK with "message" in JSON res', function (done) {
             const {req, res} = httpMocks.createMocks();
+            //Preparing the req
+            req.context = {};
 
             sendResponse(req, res);
 

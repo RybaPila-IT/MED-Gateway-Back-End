@@ -38,8 +38,10 @@ describe('Test use product controller', function () {
         it('Should call next', function (done) {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.product_doc = {
-                is_active: true
+            req.context = {
+                product: {
+                    is_active: true
+                }
             };
 
             productIsActive(req, res, done);
@@ -49,8 +51,10 @@ describe('Test use product controller', function () {
 
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.product_doc = {
-                is_active: false
+            req.context = {
+                product: {
+                    is_active: false
+                }
             };
 
             productIsActive(req, res);
@@ -65,7 +69,7 @@ describe('Test use product controller', function () {
 
     describe('Test ensure prediction properties are present', function () {
 
-        it('Should pass', function (done) {
+        it('Should call next and set body data into req.context', function (done) {
             const body = {
                 patient_name: 'test',
                 patient_surname: 'test',
@@ -74,8 +78,18 @@ describe('Test use product controller', function () {
                 date: 'date'
             };
             const {req, res} = httpMocks.createMocks({body});
+            // Prepare req
+            req.context = {};
 
             ensurePredictionPropertiesArePresent(req, res, done);
+
+            expect(req.context).to.include({
+                patient_name: 'test',
+                patient_surname: 'test',
+                description: 'tes',
+                data: 'data',
+                date: 'date'
+            });
         });
 
         it('Should return BAD_REQUEST with "message" in JSON res', function (done) {
@@ -92,6 +106,8 @@ describe('Test use product controller', function () {
                 delete reqBody[key]
                 // Actual test starts here.
                 const {req, res} = httpMocks.createMocks({body: reqBody}, {});
+                // Prepare the req
+                req.context = {};
 
                 ensurePredictionPropertiesArePresent(req, res);
 
@@ -109,19 +125,23 @@ describe('Test use product controller', function () {
 
     describe('Test convert image data', function () {
 
-        it('Should set req.body.data into converted response', async function () {
+        it('Should set converted data into req.context.data', async function () {
             const data = 'sample data'
             // Setting up nock for the request.
             nock(Endpoints.DicomConverter)
                 .post('/convert', body => body === data)
-                .reply(200, {data: {prediction: 'This is prediction'}});
+                .reply(200, {data: {pixels: 'Converted pixels'}});
 
-            const {req, res} = httpMocks.createMocks({body: {data}});
+            const {req, res} = httpMocks.createMocks();
+            // Prepare the req
+            req.context = {
+                data
+            };
 
             await convertImageData(req, res, function () {
             });
 
-            expect(req.body.data).to.be.deep.equal({data: {prediction: 'This is prediction'}});
+            expect(req.context.data).to.be.deep.equal({data: {pixels: 'Converted pixels'}});
         });
 
         it('Should return INTERNAL_SERVER_ERROR with "message" in JSON res', async function () {
@@ -131,7 +151,11 @@ describe('Test use product controller', function () {
                 .post('/convert', body => body === data)
                 .replyWithError('Some error happened');
 
-            const {req, res} = httpMocks.createMocks({body: {data}});
+            const {req, res} = httpMocks.createMocks();
+            // Prepare the req
+            req.context = {
+                data
+            };
 
             await convertImageData(req, res);
 
@@ -144,29 +168,41 @@ describe('Test use product controller', function () {
 
     describe('Test make prediction', function () {
 
-        it('Should set req.body.data with prediction response', async function () {
+        it('Should set prediction and photo into req.context', async function () {
             const productID = '625576dda784a265d36ff314';
             const data = 'This is some data';
-            const {req, res} = httpMocks.createMocks({body: {data}});
+            const {req, res} = httpMocks.createMocks();
             // Setting up the req
-            req.productID = productID;
+            req.context = {
+                productID,
+                data
+            };
             // Setting up nock for the request.
             nock(Endpoints.Products[productID])
                 .post('/predict', body => body === data)
-                .reply(200, {prediction: {result1: '1', result2: '2'}});
+                .reply(200, {
+                    prediction: {result1: '1', result2: '2'},
+                    photo: 'Sample photo'
+                });
 
             await makePrediction(req, res, function () {
             });
 
-            expect(req.body.data).to.deep.equal({prediction: {result1: '1', result2: '2'}});
+            expect(req.context).to.have.property('prediction');
+            expect(req.context).to.have.property('photo');
+            expect(req.context.prediction).to.deep.equal({result1: '1', result2: '2'});
+            expect(req.context.photo).to.be.equal('Sample photo');
         });
 
         it('Should return INTERNAL_SERVER_ERROR with "message" in JSON res', async function () {
             const productID = '625576dda784a265d36ff314';
             const data = 'This is some data';
-            const {req, res} = httpMocks.createMocks({body: {data}});
+            const {req, res} = httpMocks.createMocks();
             // Setting up the req
-            req.product_id = productID;
+            req.context = {
+                data,
+                productID
+            };
             // Setting up nock for the request.
             nock(Endpoints.Products[productID])
                 .post('/predict', body => body === data)
@@ -194,24 +230,24 @@ describe('Test use product controller', function () {
         });
 
         it('Should update history document by adding history entry', async function () {
-            const body = {
+            const {req, res} = httpMocks.createMocks();
+            // Preparing the req
+            req.context = {
+                history: historyDOC,
                 patient_name: 'test',
                 patient_surname: 'test',
                 description: 'tes',
                 has_photo: true,
                 photo_url: 'url',
-                date: new Date(),
+                date: new Date(123),
                 data: {
                     pixels: 'pixels',
-                    prediction: {
-                        result1: '1',
-                        result2: '2'
-                    }
+                },
+                prediction: {
+                    result1: '1',
+                    result2: '2'
                 }
             };
-            const {req, res} = httpMocks.createMocks({body});
-            // Preparing the req
-            req.history = historyDOC;
 
             await storePredictionResultInDatabase(req, res, function () {
             });
@@ -225,7 +261,7 @@ describe('Test use product controller', function () {
                 description: 'tes',
                 has_photo: true,
                 photo_url: 'url',
-                date: body.date,
+                date: new Date(123),
                 prediction: {
                     result1: '1',
                     result2: '2'
@@ -234,24 +270,25 @@ describe('Test use product controller', function () {
         });
 
         it('Should return INTERNAL_SERVER_ERROR with "message" in JSON res', async function () {
-            const body = {
+            const {req, res} = httpMocks.createMocks();
+            // Preparing the req
+            req.context = {
+                history: historyDOC,
                 patient_name: 'test',
                 patient_surname: 'test',
                 description: 'tes',
                 has_photo: true,
                 photo_url: 'url',
+                // Invalid data.
                 date: 'hello',
                 data: {
                     pixels: 'pixels',
-                    prediction: {
-                        result1: '1',
-                        result2: '2'
-                    }
+                },
+                prediction: {
+                    result1: '1',
+                    result2: '2'
                 }
             };
-            const {req, res} = httpMocks.createMocks({body});
-            // Preparing the req
-            req.history_doc = historyDOC;
 
             await storePredictionResultInDatabase(req, res, function () {
             });
@@ -271,20 +308,18 @@ describe('Test use product controller', function () {
     describe('Test send response', function () {
 
         it('Should send OK with "message, photo_url, prediction" in JSON res', function (done) {
-            const body = {
-                photo_url: 'url',
-                data: {
-                    pixels: 'pixels',
-                    prediction: {
-                        result1: '1',
-                        result2: '2'
-                    }
-                }
-            };
-            const {req, res} = httpMocks.createMocks({body});
+            const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.token = {
-                _id: new mongoose.Types.ObjectId()
+            req.context = {
+                token: {
+                    _id: new mongoose.Types.ObjectId()
+                },
+                photo_url: 'url',
+                photo: 'pixels',
+                prediction: {
+                    result1: '1',
+                    result2: '2'
+                }
             };
 
             sendResponse(req, res);

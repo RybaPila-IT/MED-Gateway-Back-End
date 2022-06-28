@@ -21,13 +21,16 @@ const requireLoginData = (req, res, next) => {
                 });
         }
     }
-    req.email = email;
-    req.password = password;
+    req.context = {
+        ...req.context,
+        email,
+        password
+    };
     next();
 }
 
 const fetchUserModelByEmail = async (req, res, next) => {
-    const {email} = req;
+    const {email} = req.context;
     let user = undefined;
     try {
         user = await User.findOne({email});
@@ -48,13 +51,13 @@ const fetchUserModelByEmail = async (req, res, next) => {
                 message: `User with email ${email} does not exist`
             });
     }
-    req.user = user;
+    req.context.user = user;
     next();
 }
 
 const verifyUserPassword = async (req, res, next) => {
-    const {password: providedPassword} = req;
-    const {password: originalPassword} = req.user;
+    const {password: providedPassword} = req.context;
+    const {password: originalPassword} = req.context.user;
     let match = false;
     try {
         match = await bcrypt.compare(providedPassword, originalPassword);
@@ -67,7 +70,7 @@ const verifyUserPassword = async (req, res, next) => {
             });
     }
     if (!match) {
-        const {_id: userID, name, surname} = req.user;
+        const {_id: userID, name, surname} = req.context.user;
         log.log('info', 'LOGIN', 'Invalid credentials for user', name, surname, userID.toString());
         return res
             .status(httpStatus.UNAUTHORIZED)
@@ -86,7 +89,7 @@ const createToken = (req, res, next) => {
         ({_id, status}) => {
             return {_id, status}
         }
-    )(req.user);
+    )(req.context.user);
     let token = undefined;
     try {
         token = jwt.sign(payload, jwtSecret, options);
@@ -98,19 +101,22 @@ const createToken = (req, res, next) => {
                 message: 'Error while creating the token for user'
             });
     }
-    req.token = token;
+    req.context.token = token;
     next();
 }
 
 const sendResponse = (req, res) => {
-    const {token} = req;
+    const {token, user} = req.context;
     res
         .status(httpStatus.OK)
         .json({
             token
         });
     // Log for finishing action.
-    log.log('info', 'LOGIN', 'User', req.user.name, req.user.surname, req.user._id.toString(), 'logged in successfully');
+    log.log(
+        'info', 'LOGIN', 'User', user.name, user.surname,
+        user._id.toString(), 'logged in successfully'
+    );
 }
 
 const loginUser = [

@@ -30,6 +30,14 @@ const requireRegisterData = (req, res, next) => {
                 });
         }
     }
+    req.context = {
+        ...req.context,
+        name,
+        surname,
+        email,
+        password,
+        organization
+    }
     next();
 }
 
@@ -46,15 +54,14 @@ const genSalt = async (req, res, next) => {
                 message: 'Error while protecting user password'
             });
     }
-    req.salt = salt;
+    req.context.salt = salt;
     next();
 }
 
 const hashPassword = async (req, res, next) => {
-    const {password} = req.body;
-    const {salt} = req;
+    const {password, salt} = req.context;
     try {
-        req.body.password = await bcrypt.hash(password, salt);
+        req.context.password = await bcrypt.hash(password, salt);
     } catch (err) {
         log.log('error', 'REGISTER', 'Error in hashPassword:', err.message);
         return res
@@ -67,7 +74,7 @@ const hashPassword = async (req, res, next) => {
 }
 
 const createUser = async (req, res, next) => {
-    const {name, surname, email, password, organization} = req.body;
+    const {name, surname, email, password, organization} = req.context;
     let user = undefined;
     try {
         user = await User.create({name, surname, email, password, organization});
@@ -87,11 +94,12 @@ const createUser = async (req, res, next) => {
                 message: 'Unable to register user due to internal error'
             });
     }
-    req.user = user;
+    req.context.user = user;
     next();
 }
 
 const sendResponse = (req, res) => {
+    const {user} = req.context;
     res
         .status(httpStatus.CREATED)
         .json({
@@ -100,7 +108,7 @@ const sendResponse = (req, res) => {
     // Response logging
     log.log(
         'info', 'REGISTER', 'Registration of user',
-        req.user.name, req.user.surname, req.user._id.toString(), 'went successfully'
+        user.name, user.surname, user._id.toString(), 'went successfully'
     );
 }
 
