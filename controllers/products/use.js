@@ -107,10 +107,10 @@ const convertImageData = async (req, res, next) => {
 
 
 const makePrediction = async (req, res, next) => {
-    const {productId} = req.params;
+    const {product_id} = req;
     const {data} = req.body;
-    const productEndpointUrl = Endpoints.Products[productId];
-    const accessToken = EnvKeys.productsAccessTokens[productId];
+    const productEndpointUrl = `${Endpoints.Products[product_id]}/predict`;
+    const accessToken = EnvKeys.productsAccessTokens[product_id];
     let predictionResponse = undefined;
     try {
         predictionResponse = checkResponseStatus(
@@ -140,9 +140,9 @@ const makePrediction = async (req, res, next) => {
 
 
 const storePredictionPhotoResult = async (req, res, next) => {
-    const {productId} = req.params;
+    const {product_id} = req;
     // End execution if we do not need to store photo.
-    if (!productStoresPhoto[productId]) {
+    if (!productStoresPhoto[product_id]) {
         req.body.photo_url = '';
         req.body.has_photo = false;
         // Continue the execution pipeline.

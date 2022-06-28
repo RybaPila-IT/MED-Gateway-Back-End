@@ -140,6 +140,46 @@ describe('Test get product controller', function () {
 
     });
 
+    describe('Test make prediction', function () {
+
+        it('Should set req.body.data with prediction response', async function() {
+            const productID = '625576dda784a265d36ff314';
+            const data = 'This is some data';
+            const {req, res} = httpMocks.createMocks({body: {data}});
+            // Setting up the req
+            req.product_id = productID;
+            // Setting up nock for the request.
+            nock(Endpoints.Products[productID])
+                .post('/predict', body => body === data)
+                .reply(200, {prediction: {result1: '1', result2: '2'}});
+
+            await makePrediction(req, res, function (){
+            });
+
+            expect(req.body.data).to.deep.equal({prediction: {result1: '1', result2: '2'}});
+        });
+
+        it('Should return INTERNAL_SERVER_ERROR with "message" in JSON res', async function() {
+            const productID = '625576dda784a265d36ff314';
+            const data = 'This is some data';
+            const {req, res} = httpMocks.createMocks({body: {data}});
+            // Setting up the req
+            req.product_id = productID;
+            // Setting up nock for the request.
+            nock(Endpoints.Products[productID])
+                .post('/predict', body => body === data)
+                .replyWithError('Some error occurred');
+
+            await makePrediction(req, res, function (){
+            });
+
+            expect(res._getStatusCode()).to.be.equal(httpStatus.INTERNAL_SERVER_ERROR);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.have.property('message');
+        });
+
+    });
+
     after(async function () {
         await mongoose.disconnect();
         await mongoServer.stop();
