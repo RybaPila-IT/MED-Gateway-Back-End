@@ -38,7 +38,7 @@ describe('Test use product controller', function () {
         it('Should call next', function (done) {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.product = {
+            req.product_doc = {
                 is_active: true
             };
 
@@ -49,7 +49,7 @@ describe('Test use product controller', function () {
 
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.product = {
+            req.product_doc = {
                 is_active: false
             };
 

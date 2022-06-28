@@ -1,57 +1,42 @@
 const httpStatus = require('http-status-codes');
 const log = require('npmlog');
-const mongoose = require('mongoose');
 
 const Product = require('../../data/models/product');
+const {validID} = require('../../middleware/check');
 
 const requireProductIdInParams = (req, res, next) => {
     const {productId} = req.params;
     if (!productId) {
-        log.log('info', 'GET PRODUCT', 'missing product ID in request parameters');
+        log.log('info', 'GET PRODUCT', 'Missing product ID in request parameters');
         return res
             .status(httpStatus.BAD_REQUEST)
             .json({
-                message: 'Missing product id in request parameters'
+                message: 'Missing product ID in request parameters'
+            });
+    }
+    if (!validID(productId)) {
+        log.log('info', 'GET PRODUCT', 'Provided ID', productId, 'is invalid');
+        return res
+            .status(httpStatus.BAD_REQUEST)
+            .json({
+                message: `Provided product ID ${productId} is invalid`
             });
     }
     req.product_id = productId;
     next();
 }
 
-const validProductId = (req, res, next) => {
-    const {product_id} = req;
-    let objId = undefined;
-    try {
-        objId = new mongoose.Types.ObjectId(product_id);
-    } catch (err) {
-        log.log('info', 'GET PRODUCT', 'provided product ID is invalid; productId:', product_id);
-        return res
-            .status(httpStatus.BAD_REQUEST)
-            .json({
-                message: 'Provided product identifier is invalid'
-            });
-    }
-    if (objId.toString() !== product_id) {
-        log.log('info', 'GET PRODUCT', 'provided product ID is invalid; productId:', product_id);
-        return res
-            .status(httpStatus.BAD_REQUEST)
-            .json({
-                message: 'Provided product identifier is invalid'
-            });
-    }
-    next();
-}
 
-const fetchProductData = async (req, res, next) => {
-    const {productId} = req.params;
+const fetchProduct = async (req, res, next) => {
+    const {product_id} = req;
     const projection = {
         created_at: 0,
         updated_at: 0,
         __v: 0
     };
-    let product = undefined;
+    let productDoc = undefined;
     try {
-        product = await Product.findById(productId, projection);
+        productDoc = await Product.findById(product_id, projection);
     } catch (err) {
         log.log('error', 'GET PRODUCT', 'Error at getProductData:', err.message);
         return res
@@ -60,15 +45,15 @@ const fetchProductData = async (req, res, next) => {
                 message: 'Internal error while fetching product data'
             });
     }
-    if (!product) {
-        log.log('info', 'GET PRODUCT', 'Searched for product with id', productId, 'but it does not exist');
+    if (!productDoc) {
+        log.log('info', 'GET PRODUCT', 'Searched for product with id', product_id, 'but it does not exist');
         return res
             .status(httpStatus.BAD_REQUEST)
             .json({
-                message: `Product with id ${productId} does not exist`
+                message: `Product with id ${product_id} does not exist`
             });
     }
-    req.product = product['_doc'];
+    req.product_doc = productDoc;
     next();
 }
 
@@ -76,7 +61,7 @@ const sendSingleProductResponse = (req, res) => {
     res
         .status(httpStatus.OK)
         .json({
-            ...req.product
+            ...req.product_doc['_doc']
         });
 }
 
@@ -88,9 +73,9 @@ const fetchProductsSummary = async (req, res, next) => {
         short_description: 1,
         is_active: 1
     }
-    let products = [];
+    let productsDocs = [];
     try {
-        products = await Product.find(filter, projection).exec();
+        productsDocs = await Product.find(filter, projection).exec();
     } catch (err) {
         log.log('error', 'GET PRODUCTS', 'Error at getAllProductsSummary:', err.message);
         return res
@@ -99,7 +84,7 @@ const fetchProductsSummary = async (req, res, next) => {
                 message: 'Internal error while fetching list of available products'
             });
     }
-    req.products = products.map(product => product['_doc']);
+    req.products_docs = productsDocs;
     next();
 }
 
@@ -107,14 +92,15 @@ const sendProductsSummaryResponse = (req, res) => {
     res
         .status(httpStatus.OK)
         .json(
-            req.products
+            req.products_docs.map(product => product['_doc'])
         );
+    // Final logging
+    log.log('info', 'GET PRODUCTS SUMMARY', 'Products summary has been sent successfully');
 }
 
 const getProduct = [
     requireProductIdInParams,
-    validProductId,
-    fetchProductData,
+    fetchProduct,
     sendSingleProductResponse
 ];
 
@@ -128,8 +114,7 @@ module.exports = {
     getProduct,
     // Export single functions for testing purposes.
     requireProductIdInParams,
-    validProductId,
-    fetchProductData,
+    fetchProduct,
     sendSingleProductResponse,
     fetchProductsSummary,
     sendProductsSummaryResponse

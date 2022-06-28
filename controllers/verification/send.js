@@ -12,14 +12,13 @@ const {
 } = require('../user/login');
 
 
-const requireVerificationData = (req, res, next) => {
+const requireEmailInBody = (req, res, next) => {
     const {email} = req.body;
-
     if (!email) {
         return res
             .status(httpStatus.BAD_REQUEST)
             .json({
-                message: 'email is missing'
+                message: 'Email property is missing'
             });
     }
     req.email = email;
@@ -28,10 +27,10 @@ const requireVerificationData = (req, res, next) => {
 
 
 const createVerification = async (req, res, next) => {
-    const {_id} = req.user;
+    const {_id: user_id} = req.user;
     let ver = undefined;
     try {
-        ver = await Verification.findOneAndUpdate({user_id: _id}, {$set: {user_id: _id}}, {new: true, upsert: true});
+        ver = await Verification.findOneAndUpdate({user_id}, {$set: {user_id}}, {new: true, upsert: true});
     } catch (err) {
         log.log('error', 'SEND VERIFICATION', 'Error at createVerification:', err.message);
         return res
@@ -48,14 +47,14 @@ const createVerification = async (req, res, next) => {
                 message: 'Internal error while sending verification email'
             });
     }
-    req.ver = ver['_doc'];
+    req.ver_doc = ver;
     next();
 }
 
 const sendVerificationEmail = async (req, res, next) => {
-    const {_id} = req.ver;
-    const {email} = req.user;
-    const link = `${Endpoints.MedGatewayBackend}/api/verify/${_id}`;
+    const {_id: ver_id} = req.ver_doc;
+    const {email} = req;
+    const link = `${Endpoints.MedGatewayBackend}/api/verify/${ver_id}`;
     const options = {
         ...defaultOptions,
         to: email,
@@ -72,7 +71,7 @@ const sendVerificationEmail = async (req, res, next) => {
                 message: 'Unable to send verification email. Try again later or check if provided email is correct'
             });
     }
-    log.log('info', 'VERIFY', 'Verification email has been sent to', email);
+    log.log('info', 'SEND VERIFICATION', 'Verification email has been sent to', email);
     next();
 }
 
@@ -85,7 +84,7 @@ const sendResponse = (req, res) => {
 }
 
 const sendVerificationMail = [
-    requireVerificationData,
+    requireEmailInBody,
     fetchUserModelByEmail,
     createVerification,
     sendVerificationEmail,
@@ -95,7 +94,7 @@ const sendVerificationMail = [
 module.exports = {
     sendVerificationMail,
     // Exporting single functions for testing purposes.
-    requireVerificationData,
+    requireEmailInBody,
     createVerification,
     sendVerificationEmail,
     sendResponse

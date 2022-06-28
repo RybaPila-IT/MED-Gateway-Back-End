@@ -12,7 +12,7 @@ const httpMocks = require('node-mocks-http');
 const Verification = require('../../../data/models/verification');
 const User = require('../../../data/models/user');
 const {
-    requireVerificationData,
+    requireVerificationIdInParams,
     fetchVerificationById,
     verifyUserAccount,
     deleteVerification,
@@ -36,13 +36,12 @@ describe('Test verification verify controller', function () {
 
     describe('Test require verification data', function () {
 
-        it('Should call next and set verifyId in req', function (done) {
-            const {req, res} = httpMocks.createMocks({params: {verifyId: '123'}});
+        it('Should call next and set verify_id in req', function (done) {
+            const {req, res} = httpMocks.createMocks({params: {verifyId: '551137c2f9e1fac808a5f572'}});
 
-            requireVerificationData(req, res, function () {
-
-                expect(req).to.have.property('verifyId');
-                expect(req.verifyId).to.equal('123');
+            requireVerificationIdInParams(req, res, function () {
+                expect(req).to.have.property('verify_id');
+                expect(req.verify_id).to.equal('551137c2f9e1fac808a5f572');
                 done();
             });
         });
@@ -50,7 +49,7 @@ describe('Test verification verify controller', function () {
         it('Should return BAD_REQUEST with "message" in JSON res', function (done) {
             const {req, res} = httpMocks.createMocks();
 
-            requireVerificationData(req, res);
+            requireVerificationIdInParams(req, res);
 
             expect(res._isJSON()).to.be.true;
             expect(res._getJSONData()).to.have.property('message');
@@ -58,38 +57,46 @@ describe('Test verification verify controller', function () {
             done();
         });
 
+        it('Should return BAD_REQUEST with "message" in JSON res', function (done) {
+            const {req, res} = httpMocks.createMocks({params: {verifyId: '123'}});
+
+            requireVerificationIdInParams(req, res);
+
+            expect(res._getStatusCode()).to.be.equal(httpStatus.BAD_REQUEST);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.have.property('message');
+            done();
+        });
+
     });
 
     describe('Test fetch verification by ID', function () {
 
-        let verifyId = undefined;
+        let verifyDOC = undefined;
 
         before(async function () {
-            const ver = await Verification.create({user_id: '537eed02ed345b2e039652d2'});
-            verifyId = ver._id;
+            verifyDOC = await Verification.create({user_id: '537eed02ed345b2e039652d2'});
         });
 
 
-        it('Should set ver in req containing verification data', async function () {
+        it('Should set ver_doc in req', async function () {
 
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.verifyId = verifyId;
+            req.verify_id = verifyDOC._id.toString();
 
             await fetchVerificationById(req, res, function () {
             });
 
-            const ver = await Verification.findById(verifyId);
-
-            expect(req).to.have.property('ver');
-            expect(req.ver._id.toString()).to.equal(ver['_doc']._id.toString());
+            expect(req).to.have.property('ver_doc');
+            expect(req.ver_doc._doc).to.deep.equal(verifyDOC._doc);
         });
 
         it('Should return BAD_REQUEST with "message" in JSON res', async function () {
 
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.verifyId = '537eed02ed345b2e039652d2';
+            req.verify_id = '537eed02ed345b2e039652d2';
 
             await fetchVerificationById(req, res);
 
@@ -102,18 +109,17 @@ describe('Test verification verify controller', function () {
 
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.verifyId = 'hello';
+            req.verify_id = 'hello';
 
             await fetchVerificationById(req, res);
 
             expect(res._getStatusCode()).to.be.equal(httpStatus.INTERNAL_SERVER_ERROR);
             expect(res._isJSON()).to.be.true;
             expect(res._getJSONData()).to.have.property('message');
-
         });
 
         after(async function () {
-            await Verification.deleteMany({});
+            await verifyDOC.delete();
         });
 
     });
@@ -137,7 +143,7 @@ describe('Test verification verify controller', function () {
         it('Should return BAD_REQUEST with "message" in JSON res', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the request
-            req.ver = {
+            req.ver_doc = {
                 user_id: '537eed02ed345b2e039652d2'
             };
 
@@ -151,7 +157,7 @@ describe('Test verification verify controller', function () {
         it('Should return INTERNAL_SERVER_ERROR with "message" in JSON res', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the request
-            req.ver = {
+            req.ver_doc = {
                 user_id: 'hello'
             };
 
@@ -165,7 +171,7 @@ describe('Test verification verify controller', function () {
         it('Should verify user and call next', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the request
-            req.ver = {
+            req.ver_doc = {
                 user_id: userId
             };
 
@@ -185,24 +191,21 @@ describe('Test verification verify controller', function () {
 
     describe('Test delete verification', function () {
 
-        let verificationId = undefined;
+        let verificationDOC = undefined;
 
         beforeEach(async function () {
-            const ver = await Verification.create({user_id: '537eed02ed345b2e039652d2'});
-            verificationId = ver._id;
+            verificationDOC = await Verification.create({user_id: '537eed02ed345b2e039652d2'});
         });
 
         it('Should delete verification entry', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.ver = {
-                _id: verificationId
-            };
+            req.ver_doc = verificationDOC;
 
             await deleteVerification(req, res, function () {
             });
 
-            const ver = await Verification.findById(verificationId);
+            const ver = await Verification.findById(verificationDOC._id.toString());
 
             expect(ver).to.be.null;
         });
@@ -210,31 +213,36 @@ describe('Test verification verify controller', function () {
         it('Should not delete verification entry (1)', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.ver = {
-                _id: '537eed02ed345b2e039652d2'
+            req.ver_doc = {
+                delete: function () {
+                }
             };
 
             await deleteVerification(req, res, function () {
             });
 
-            const ver = await Verification.findById(verificationId);
+            const ver = await Verification.findById(verificationDOC._id.toString());
 
             expect(ver).to.not.be.undefined;
+            expect(ver).to.not.be.null;
         });
 
         it('Should not delete verification entry (2)', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.ver = {
-                _id: 'hello'
+            req.ver_doc = {
+                delete: async function() {
+                    await Verification.deleteOne({_id: 'hello'});
+                }
             };
 
             await deleteVerification(req, res, function () {
             });
 
-            const ver = await Verification.findById(verificationId);
+            const ver = await Verification.findById(verificationDOC._id.toString());
 
             expect(ver).to.not.be.undefined;
+            expect(ver).to.not.be.null;
         });
 
         afterEach(async function () {

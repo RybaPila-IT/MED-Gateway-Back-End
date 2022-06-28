@@ -7,7 +7,7 @@ const Endpoints = require('../../env/endpoints');
 const log = require('npmlog');
 const {
     requireProductIdInParams,
-    fetchProductData
+    fetchProduct
 } = require('./get')
 const {
     fetchHistory
@@ -39,8 +39,8 @@ const productStoresPhoto = {
 }
 
 const productIsActive = (req, res, next) => {
-    const {product} = req;
-    if (!product.is_active) {
+    const {product_doc} = req;
+    if (!product_doc.is_active) {
         return res
             .status(httpStatus.BAD_REQUEST)
             .json({
@@ -231,7 +231,7 @@ const sendResponse = (req, res) => {
 const useProduct = [
     ...userIsVerified,
     requireProductIdInParams,
-    fetchProductData,
+    fetchProduct,
     productIsActive,
     ensurePredictionPropertiesArePresent,
     convertImageData,
