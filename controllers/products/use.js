@@ -139,7 +139,7 @@ const makePrediction = async (req, res, next) => {
 }
 
 
-const storePredictionPhotoResult = async (req, res, next) => {
+const storePredictionPhotoResultInCloudinary = async (req, res, next) => {
     const {product_id} = req;
     // End execution if we do not need to store photo.
     if (!productStoresPhoto[product_id]) {
@@ -229,7 +229,7 @@ const useProduct = [
     ensurePredictionPropertiesArePresent,
     convertImageData,
     makePrediction,
-    storePredictionPhotoResult,
+    storePredictionPhotoResultInCloudinary,
     fetchHistory,
     storePredictionResultInDatabase,
     sendResponse
@@ -243,7 +243,7 @@ module.exports = {
     ensurePredictionPropertiesArePresent,
     convertImageData,
     makePrediction,
-    storePredictionPhotoResult,
+    storePredictionPhotoResultInCloudinary,
     storePredictionResultInDatabase,
     sendResponse
 };
