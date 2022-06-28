@@ -68,15 +68,16 @@ const hashPassword = async (req, res, next) => {
 
 const createUser = async (req, res, next) => {
     const {name, surname, email, password, organization} = req.body;
+    let user = undefined;
     try {
-        await User.create({name, surname, email, password, organization});
+        user = await User.create({name, surname, email, password, organization});
     } catch (err) {
         if (err instanceof DuplicateKeyError) {
             log.log('error', 'REGISTER', 'Registered user will cause a duplication; error:', err.message);
             return res
                 .status(httpStatus.CONFLICT)
                 .json({
-                    message: `Unable to register: ${err.message}`
+                    message: 'Provided email address is already in use!'
                 });
         }
         log.log('error', 'REGISTER', 'Error at tryRegisterUser:', err.message);
@@ -86,6 +87,7 @@ const createUser = async (req, res, next) => {
                 message: 'Unable to register user due to internal error'
             });
     }
+    req.user = user;
     next();
 }
 
@@ -95,6 +97,11 @@ const sendResponse = (req, res) => {
         .json({
             message: 'Your account has been created, please verify the account in order to use all functionalities'
         });
+    // Response logging
+    log.log(
+        'info', 'REGISTER', 'Registration of user',
+        req.body.name, req.body.surname, 'went successfully'
+    );
 }
 
 const registerUser = [

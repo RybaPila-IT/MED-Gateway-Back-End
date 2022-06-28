@@ -60,7 +60,7 @@ const sendVerificationEmail = async (req, res, next) => {
         ...defaultOptions,
         to: email,
         subject: 'Account verification',
-        html: `<h1>Welcome to MED-Gateway System!</h1>In order to verify the account please visit this <a href="${link}">link</a>`
+        html: `<h3>Welcome to MED-Gateway System!</h3>In order to verify the account please visit this <a href="${link}">link</a>`
     };
     try {
         await transporter.sendMail(options);
@@ -72,6 +72,7 @@ const sendVerificationEmail = async (req, res, next) => {
                 message: 'Unable to send verification email. Try again later or check if provided email is correct'
             });
     }
+    log.log('info', 'VERIFY', 'Verification email has been sent to', email);
     next();
 }
 

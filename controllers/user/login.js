@@ -45,7 +45,7 @@ const fetchUserModelByEmail = async (req, res, next) => {
         return res
             .status(httpStatus.UNAUTHORIZED)
             .json({
-                message: 'Credentials mismatch'
+                message: `User with email ${email} does not exist`
             });
     }
     // Store the object, not the whole model.
@@ -113,6 +113,8 @@ const sendResponse = (req, res) => {
         .json({
             token
         });
+    // Log for finishing action.
+    log.log('info', 'LOGIN', 'User', req.user.name, req.user.surname, req.user._id.toString(), 'logged in successfully');
 }
 
 const loginUser = [

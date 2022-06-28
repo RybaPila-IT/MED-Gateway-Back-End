@@ -24,7 +24,7 @@ log.pause();
 
 let mongoServer = undefined;
 
-describe('Test get product controller', function () {
+describe('Test use product controller', function () {
 
     before(async function () {
         mongoServer = await MongoMemoryServer.create();
@@ -282,6 +282,10 @@ describe('Test get product controller', function () {
                 }
             };
             const {req, res} = httpMocks.createMocks({body});
+            // Preparing the req
+            req.token = {
+                _id: new mongoose.Types.ObjectId()
+            };
 
             sendResponse(req, res);
 

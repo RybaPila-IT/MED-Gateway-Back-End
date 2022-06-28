@@ -45,6 +45,11 @@ const sendResponse = (req, res) => {
         .json({
             ...req.user
         });
+    // Result log.
+    log.log(
+        'info', 'GET USER', 'Sent personal information about',
+        req.user.name, req.user.surname, req.user._id.toString()
+    );
 }
 
 const getUser = [

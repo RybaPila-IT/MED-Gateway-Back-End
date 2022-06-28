@@ -130,7 +130,7 @@ describe('Test verification send controller', function () {
                     from: 'med-gateway@outlook.com',
                     to: 'someEmail@gmail.com',
                     subject: 'Account verification',
-                    html: '<h1>Welcome to MED-Gateway System!</h1>In order to verify the account please visit this <a href="http://localhost/5000/api/verify/12345">link</a>'
+                    html: '<h3>Welcome to MED-Gateway System!</h3>In order to verify the account please visit this <a href="http://localhost:5000/api/verify/12345">link</a>'
                 });
             });
 

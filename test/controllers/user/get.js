@@ -113,21 +113,27 @@ describe('Test get user controller', function () {
         it('Should send OK response', function (done) {
 
             const {req, res} = httpMocks.createMocks();
-            const user = {
+            // Setting up the req
+            req.user = {
+                _id: new mongoose.Types.ObjectId(),
                 name: 'test',
                 surname: 'test',
                 email: 'test@email',
                 organization: 'test',
                 status: 'verified'
             };
-            // Setting up the req
-            req.user = user;
 
             sendResponse(req, res)
 
             expect(res._getStatusCode()).to.equal(httpStatus.OK);
             expect(res._isJSON()).to.be.true;
-            expect(res._getJSONData()).to.include(user);
+            expect(res._getJSONData()).to.include({
+                name: 'test',
+                surname: 'test',
+                email: 'test@email',
+                organization: 'test',
+                status: 'verified'
+            });
             done();
         });
 

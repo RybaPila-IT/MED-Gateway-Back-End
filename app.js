@@ -29,7 +29,7 @@ app.use(
 
 // Endpoints config.
 app.use('/', indexRouter);
-app.use('/api/user', userRouter);
+app.use('/api/users', userRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/history', historyRouter);
 app.use('/api/verify', verificationRouter);

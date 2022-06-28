@@ -110,7 +110,7 @@ const makePrediction = async (req, res, next) => {
     const {product_id} = req;
     const {data} = req.body;
     const productEndpointUrl = `${Endpoints.Products[product_id]}/predict`;
-    const accessToken = EnvKeys.productsAccessTokens[product_id];
+    const accessToken = process.env[EnvKeys.productsAccessTokens[product_id]];
     let predictionResponse = undefined;
     try {
         predictionResponse = checkResponseStatus(
@@ -208,6 +208,8 @@ const storePredictionResultInDatabase = async (req, res, next) => {
 
 
 const sendResponse = (req, res) => {
+    const {_id: user_id} = req.token;
+    const {product_id} = req;
     const {photo_url} = req.body;
     const {prediction} = req.body.data;
 
@@ -218,6 +220,11 @@ const sendResponse = (req, res) => {
             photo_url,
             prediction
         });
+    // Final logging
+    log.log(
+        'info', 'USE PRODUCT', 'User', user_id, 'successfully used product', product_id,
+        '. Result photo URL is "', photo_url, '"'
+    );
 }
 
 

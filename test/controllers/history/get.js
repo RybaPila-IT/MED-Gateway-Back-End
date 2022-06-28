@@ -11,7 +11,6 @@ const log = require('npmlog');
 const httpMocks = require('node-mocks-http');
 const History = require('../../../data/models/history');
 const {
-    requireProductIdInParams,
     fetchHistory,
     sendResponse
 } = require('../../../controllers/history/get');
@@ -110,11 +109,13 @@ describe('Test get history controller', function () {
 
         it('Should return OK with entries in JSON res', function (done) {
             const history = {
+                user_id: new mongoose.Types.ObjectId(),
+                product_id: new mongoose.Types.ObjectId(),
                 entries: ['1', '2', '3']
             };
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.history = history;
+            req.history_doc = history;
 
             sendResponse(req, res);
 

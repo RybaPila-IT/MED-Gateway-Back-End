@@ -68,6 +68,7 @@ const verifyUserAccount = async (req, res, next) => {
                 message: 'Attempt to verify user which does not exist'
             });
     }
+    log.log('info', 'VERIFY', 'User with ID', user._id.toString(), 'has been verified');
     next();
 }
 

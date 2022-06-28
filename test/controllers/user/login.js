@@ -236,6 +236,11 @@ describe('Test user login controller', function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the request.
             req.token = token
+            req.user = {
+                _id: new mongoose.Types.ObjectId(),
+                name: 'test',
+                surname: 'test'
+            }
 
             sendResponse(req, res);
 

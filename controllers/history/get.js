@@ -35,8 +35,17 @@ const sendResponse = (req, res) => {
     res
         .status(httpStatus.OK)
         .json({
-            entries: req.history.entries
+            entries: req.history_doc.entries
         });
+    // Log the success info.
+    log.log(
+        'info',
+        'GET HISTORY',
+        'Sent history entries for user',
+        req.history_doc.user_id.toString(),
+        'of product',
+        req.history_doc.product_id.toString()
+    )
 }
 
 
