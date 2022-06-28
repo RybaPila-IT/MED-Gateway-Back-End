@@ -101,14 +101,11 @@ describe('Test user register controller', function () {
 
         it('Should generate salt in req', async function () {
             const {req, res} = httpMocks.createMocks();
-            let nextCalled = false;
 
             await genSalt(req, res, function () {
-                nextCalled = true;
-                expect(req).to.have.property('salt');
             });
 
-            expect(nextCalled).to.be.true;
+            expect(req).to.have.property('salt');
         });
 
     });
@@ -118,16 +115,13 @@ describe('Test user register controller', function () {
         it('Should hash the password', async function () {
             const originalPassword = 'password';
             const {req, res} = httpMocks.createMocks({body: {password: originalPassword}});
-            let nextCalled = false;
             // Preparing the request
             req.salt = 10;
 
             await hashPassword(req, res, function () {
-                nextCalled = true;
-                expect(req.body.password).to.not.equal(originalPassword);
             });
 
-            expect(nextCalled).to.be.true;
+            expect(req.body.password).to.not.equal(originalPassword);
         });
 
     });
@@ -154,16 +148,14 @@ describe('Test user register controller', function () {
                 organization: 'org'
             }
             const {req, res} = httpMocks.createMocks({body: user});
-            let nextCalled = false;
 
             await createUser(req, res, function () {
-                nextCalled = true;
             });
 
             const addedUser = await User.findOne({email: 'some2@email'});
 
-            expect(nextCalled).to.be.true;
             expect(addedUser).not.to.be.undefined;
+            expect(addedUser).not.to.be.null;
             expect(addedUser['_doc']).to.include(user);
             expect(addedUser['_doc'].status).to.be.equal('unverified');
 
@@ -179,14 +171,27 @@ describe('Test user register controller', function () {
                 organization: 'org'
             }
             const {req, res} = httpMocks.createMocks({body: user});
-            let nextCalled = false;
 
-            await createUser(req, res, function () {
-                nextCalled = true;
-            });
+            await createUser(req, res);
 
-            expect(nextCalled).to.be.false;
             expect(res._getStatusCode()).to.be.equal(httpStatus.CONFLICT);
+            expect(res._isJSON()).to.be.true;
+            expect(res._getJSONData()).to.have.property('message');
+        });
+
+        it('Should return INTERNAL_SERVER_ERROR with "message" in JSON res', async function() {
+            const user = {
+                name: 'this name is definitely too long to fit into my database so error is needed',
+                surname: 'surname',
+                email: 'some@email',
+                password: 'password',
+                organization: 'org'
+            }
+            const {req, res} = httpMocks.createMocks({body: user});
+
+            await createUser(req, res);
+
+            expect(res._getStatusCode()).to.be.equal(httpStatus.INTERNAL_SERVER_ERROR);
             expect(res._isJSON()).to.be.true;
             expect(res._getJSONData()).to.have.property('message');
         });
@@ -201,6 +206,12 @@ describe('Test user register controller', function () {
 
         it('Should return CREATED response with "message" in JSON res', function (done) {
             const {req, res} = httpMocks.createMocks();
+            // Preparing req
+            req.user = {
+                name: 'test',
+                surname: 'test',
+                _id: new mongoose.Types.ObjectId()
+            };
 
             sendResponse(req, res);
 

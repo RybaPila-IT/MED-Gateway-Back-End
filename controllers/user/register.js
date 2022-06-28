@@ -100,7 +100,7 @@ const sendResponse = (req, res) => {
     // Response logging
     log.log(
         'info', 'REGISTER', 'Registration of user',
-        req.body.name, req.body.surname, 'went successfully'
+        req.user.name, req.user.surname, req.user._id.toString(), 'went successfully'
     );
 }
 

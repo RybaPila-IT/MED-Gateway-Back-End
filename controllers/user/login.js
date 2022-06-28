@@ -48,8 +48,7 @@ const fetchUserModelByEmail = async (req, res, next) => {
                 message: `User with email ${email} does not exist`
             });
     }
-    // Store the object, not the whole model.
-    req.user = user['_doc'];
+    req.user = user;
     next();
 }
 

@@ -34,7 +34,7 @@ const getUserData = async (req, res, next) => {
                 message: 'Obtained invalid token'
             });
     }
-    req.user = user['_doc'];
+    req.user_doc = user;
     next();
 }
 
@@ -43,12 +43,12 @@ const sendResponse = (req, res) => {
     res
         .status(httpStatus.OK)
         .json({
-            ...req.user
+            ...req.user_doc['_doc']
         });
     // Result log.
     log.log(
         'info', 'GET USER', 'Sent personal information about',
-        req.user.name, req.user.surname, req.user._id.toString()
+        req.user_doc.name, req.user_doc.surname, req.user_doc._id.toString()
     );
 }
 

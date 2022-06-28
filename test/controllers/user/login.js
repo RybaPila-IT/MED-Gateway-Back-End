@@ -87,8 +87,10 @@ describe('Test user login controller', function () {
 
     describe('Test fetch user model by email', function () {
 
+        let user = undefined
+
         before(async function () {
-            await User.create({
+            user = await User.create({
                 name: 'name',
                 surname: 'surname',
                 email: 'some@email',
@@ -110,26 +112,23 @@ describe('Test user login controller', function () {
             expect(res._getJSONData()).to.have.property('message');
         });
 
-        it('Should set user object in req', async function () {
+        it('Should set user in req', async function () {
             const {req, res} = httpMocks.createMocks();
-            let nextCalled = false;
             // Set email field in req since fetchUserModelByEmail uses it.
             req.email = 'some@email';
 
             await fetchUserModelByEmail(req, res, function () {
-                nextCalled = true;
-                expect(req).to.have.property('user');
-                expect(req.user).to.include({
-                    name: 'name',
-                    surname: 'surname',
-                    email: 'some@email',
-                    password: 'password',
-                    organization: 'org',
-                    status: 'verified'
-                });
             });
 
-            expect(nextCalled).to.be.true;
+            expect(req).to.have.property('user');
+            expect(req.user._doc).to.include({
+                name: 'name',
+                surname: 'surname',
+                email: 'some@email',
+                password: 'password',
+                organization: 'org',
+                status: 'verified'
+            });
         });
 
         after(async function () {
@@ -154,20 +153,15 @@ describe('Test user login controller', function () {
                 password: hashedPassword,
                 status: 'verified'
             };
-            let nextCalled = false;
             // Preparing the request
             req.user = user;
             req.password = originalPassword;
 
             await verifyUserPassword(req, res, function () {
-                // Mark that we have been executed.
-                nextCalled = true;
-                // Checks
-                expect(res._getStatusCode()).to.equal(httpStatus.OK);
-                expect(req.user).include(user);
             });
 
-            expect(nextCalled).to.be.true;
+            expect(res._getStatusCode()).to.equal(httpStatus.OK);
+            expect(req.user).include(user);
         });
 
         it('Should respond with UNAUTHORIZED with "message" field in JSON res', async function () {

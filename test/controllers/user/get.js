@@ -24,7 +24,7 @@ describe('Test get user controller', function () {
 
     describe('Test get user data', function () {
 
-        let userId = undefined;
+        let user = undefined;
 
         before(async function () {
             mongoServer = await MongoMemoryServer.create();
@@ -32,7 +32,7 @@ describe('Test get user controller', function () {
                 mongoServer.getUri()
             );
             // Create test user
-            const user = await User
+            user = await User
                 .create({
                     name: 'test',
                     surname: 'test',
@@ -41,34 +41,29 @@ describe('Test get user controller', function () {
                     organization: 'test',
                     status: 'verified'
                 });
-            // Set _id for testing purposes
-            userId = user['_doc']._id.toString();
         });
 
-        it('Should set user in req object', async function () {
+        it('Should set user_doc in req object', async function () {
             const {req, res} = httpMocks.createMocks();
             // Prepare request
             req.token = {
-                _id: userId
+                _id: user._id.toString()
             };
-            let nextCalled = false;
 
             await getUserData(req, res, function() {
-                nextCalled = true;
-                // Actual tests
-                expect(req).to.have.property('token');
-                expect(req).to.have.property('user');
-                expect(req.user).to.include({
-                    name: 'test',
-                    surname: 'test',
-                    email: 'test@email',
-                    organization: 'test',
-                    status: 'verified'
-                });
-                expect(req.user).to.not.have.property('password');
-            })
+            });
 
-            expect(nextCalled).to.be.true;
+            expect(req).to.have.property('token');
+            expect(req).to.have.property('user_doc');
+            expect(req.user_doc._doc).to.deep.include({
+                _id: user._id,
+                name: 'test',
+                surname: 'test',
+                email: 'test@email',
+                organization: 'test',
+                status: 'verified'
+            });
+            expect(req.user_doc._doc).to.not.have.property('password');
         });
 
         it('Should return BAD_REQUEST with "message" field in JSON', async function () {
@@ -88,7 +83,7 @@ describe('Test get user controller', function () {
 
         it('Should return INTERNAL_SERVER_ERROR with "message in JSON', async function() {
             const {req, res} = httpMocks.createMocks();
-            // Prepare request
+            // Preparing request
             req.token = {
                 // Setting invalid _id
                 _id: 'not-a-id'
@@ -114,13 +109,22 @@ describe('Test get user controller', function () {
 
             const {req, res} = httpMocks.createMocks();
             // Setting up the req
-            req.user = {
+            req.user_doc = {
+                _doc: {
+                    _id: new mongoose.Types.ObjectId(),
+                    name: 'test',
+                    surname: 'test',
+                    email: 'test@email',
+                    organization: 'test',
+                    status: 'verified'
+                },
                 _id: new mongoose.Types.ObjectId(),
                 name: 'test',
                 surname: 'test',
                 email: 'test@email',
                 organization: 'test',
-                status: 'verified'
+                status: 'verified',
+                other: 'other stuff'
             };
 
             sendResponse(req, res)
