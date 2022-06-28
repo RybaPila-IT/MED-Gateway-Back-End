@@ -27,10 +27,10 @@ const requireEmailInBody = (req, res, next) => {
 
 
 const createVerification = async (req, res, next) => {
-    const {_id: user_id} = req.user;
+    const {_id: userID} = req.user;
     let ver = undefined;
     try {
-        ver = await Verification.findOneAndUpdate({user_id}, {$set: {user_id}}, {new: true, upsert: true});
+        ver = await Verification.findOneAndUpdate({user_id: userID}, {$set: {user_id: userID}}, {new: true, upsert: true});
     } catch (err) {
         log.log('error', 'SEND VERIFICATION', 'Error at createVerification:', err.message);
         return res
@@ -47,14 +47,14 @@ const createVerification = async (req, res, next) => {
                 message: 'Internal error while sending verification email'
             });
     }
-    req.ver_doc = ver;
+    req.verification = ver;
     next();
 }
 
 const sendVerificationEmail = async (req, res, next) => {
-    const {_id: ver_id} = req.ver_doc;
+    const {_id: verificationID} = req.verification;
     const {email} = req;
-    const link = `${Endpoints.MedGatewayBackend}/api/verify/${ver_id}`;
+    const link = `${Endpoints.MedGatewayBackend}/api/verify/${verificationID}`;
     const options = {
         ...defaultOptions,
         to: email,

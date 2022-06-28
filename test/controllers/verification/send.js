@@ -78,7 +78,7 @@ describe('Test verification send controller', function () {
 
     describe('Test create verification', function () {
 
-        it('Should create verification and set ver_doc in req', async function () {
+        it('Should create verification and set verification in req', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
             req.user = {
@@ -91,8 +91,8 @@ describe('Test verification send controller', function () {
             const verification = await Verification.findOne({user_id: '537eed02ed345b2e039652d2'});
 
             expect(verification).not.to.be.undefined;
-            expect(req).to.have.property('ver_doc');
-            expect(req.ver_doc._doc).to.deep.equal(verification['_doc']);
+            expect(req).to.have.property('verification');
+            expect(req.verification._doc).to.deep.equal(verification['_doc']);
         });
 
         it('Should return INTERNAL_SERVER_ERROR with "message" in JSON res', async function() {
@@ -122,7 +122,7 @@ describe('Test verification send controller', function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
             req.email = 'someEmail@gmail.com';
-            req.ver_doc = {
+            req.verification = {
                 _id: '12345'
             };
 
@@ -146,7 +146,7 @@ describe('Test verification send controller', function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
             req.email = 'someEmail@gmail.com';
-            req.ver_doc = {
+            req.verification = {
                 _id: '12345'
             };
 

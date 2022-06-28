@@ -11,7 +11,7 @@ const {
 
 router.get('/', getProductsSummary);
 
-router.route('/:productId')
+router.route('/:productID')
     .get(getProduct)
     .post(useProduct)
 

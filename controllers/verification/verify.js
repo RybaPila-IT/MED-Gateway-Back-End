@@ -6,9 +6,8 @@ const Verification = require('../../data/models/verification');
 const {validID} = require('../../middleware/check');
 
 const requireVerificationIdInParams = (req, res, next) => {
-    const {verifyId} = req.params;
-
-    if (!verifyId) {
+    const {verifyID} = req.params;
+    if (!verifyID) {
         log.log('info', 'VERIFY', 'Missing verification ID');
         return res
             .status(httpStatus.BAD_REQUEST)
@@ -16,40 +15,40 @@ const requireVerificationIdInParams = (req, res, next) => {
                 message: 'Verification identifier is missing'
             });
     }
-    if (!validID(verifyId)) {
-        log.log('info', 'VERIFY', 'Provided verification ID', verifyId, 'is incorrect');
+    if (!validID(verifyID)) {
+        log.log('info', 'VERIFY', 'Provided verification ID', verifyID, 'is incorrect');
         return res
             .status(httpStatus.BAD_REQUEST)
             .json({
-                message: `Provided verification ID ${verifyId} is invalid`
+                message: `Provided verification ID ${verifyID} is invalid`
             });
     }
-    req.verify_id = verifyId;
+    req.verifyID = verifyID;
     next();
 }
 
 const fetchVerificationById = async (req, res, next) => {
-    const {verify_id} = req;
+    const {verifyID} = req;
     let ver = undefined;
     try {
-        ver = await Verification.findById(verify_id);
+        ver = await Verification.findById(verifyID);
     } catch (err) {
         log.log('error', 'VERIFY', 'Error at fetchVerificationById:', err.message);
         return res
             .status(httpStatus.INTERNAL_SERVER_ERROR)
             .json({
-                message: `Error while fetching verification document with ID ${verify_id}`
+                message: `Error while fetching verification document with ID ${verifyID}`
             });
     }
     if (!ver) {
-        log.log('info', 'VERIFY', 'Unable to fetch verification with ID', verify_id, 'since it does not exist');
+        log.log('info', 'VERIFY', 'Unable to fetch verification with ID', verifyID, 'since it does not exist');
         return res
             .status(httpStatus.BAD_REQUEST)
             .json({
-                message: `Verification with ID ${verify_id} does not exist`
+                message: `Verification with ID ${verifyID} does not exist`
             });
     }
-    req.ver_doc = ver;
+    req.verification = ver;
     next();
 }
 
@@ -58,10 +57,10 @@ const fetchVerificationById = async (req, res, next) => {
 const verifyUserAccount = async (req, res, next) => {
     const update = { status: 'verified' };
     const options = { new: true };
-    const {ver_doc} = req;
+    const {verification} = req;
     let user = undefined;
     try {
-        user = await User.findByIdAndUpdate(ver_doc.user_id, update, options).exec();
+        user = await User.findByIdAndUpdate(verification.user_id, update, options).exec();
     } catch (err) {
         log.log('error', 'VERIFY', 'Error at verifyUserAccount:', err.message);
         return res
@@ -71,7 +70,7 @@ const verifyUserAccount = async (req, res, next) => {
             });
     }
     if (!user) {
-        log.log('error', 'VERIFY', 'Error: user with id', ver_doc.user_id, 'does not exist');
+        log.log('error', 'VERIFY', 'Error: user with id', verification.user_id, 'does not exist');
         return res
             .status(httpStatus.BAD_REQUEST)
             .json({
@@ -84,9 +83,9 @@ const verifyUserAccount = async (req, res, next) => {
 
 
 const deleteVerification = async (req, res, next) => {
-    const {ver_doc} = req;
+    const {verification} = req;
     try {
-        await ver_doc.delete();
+        await verification.delete();
     } catch (err) {
         log.log('error', 'VERIFY', 'Error at deleteVerification', err.message);
     }

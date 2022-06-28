@@ -54,12 +54,12 @@ describe('Test get product controller', function () {
             done();
         });
 
-        it('Should set product_id in req', function (done) {
-            const {req, res} = httpMocks.createMocks({params: {productId: '551137c2f9e1fac808a5f572'}});
+        it('Should set productID in req', function (done) {
+            const {req, res} = httpMocks.createMocks({params: {productID: '551137c2f9e1fac808a5f572'}});
 
             requireProductIdInParams(req, res, function () {
-                expect(req).to.have.property('product_id');
-                expect(req.product_id).to.be.equal('551137c2f9e1fac808a5f572');
+                expect(req).to.have.property('productID');
+                expect(req.productID).to.be.equal('551137c2f9e1fac808a5f572');
                 done();
             });
         });
@@ -84,7 +84,7 @@ describe('Test get product controller', function () {
         it('Should return BAD_REQUEST with "message" in JSON res', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.product_id = '537eed02ed345b2e039652d2';
+            req.productID = '537eed02ed345b2e039652d2';
 
             await fetchProduct(req, res);
 
@@ -93,16 +93,16 @@ describe('Test get product controller', function () {
             expect(res._getJSONData()).to.have.property('message');
         });
 
-        it('Should set product_doc in req', async function () {
+        it('Should set product in req', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.product_id = productDOC._id.toString();
+            req.productID = productDOC._id.toString();
 
             await fetchProduct(req, res, function () {
             });
 
-            expect(req).to.have.property('product_doc');
-            expect(req.product_doc).to.deep.include({
+            expect(req).to.have.property('product');
+            expect(req.product).to.deep.include({
                 _id: productDOC._id,
                 name: 'test',
                 short_description: 'test',
@@ -116,7 +116,7 @@ describe('Test get product controller', function () {
         it('Should return INTERNAL_SERVER_ERROR with "message" in JSON res', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.product_id = 'hello';
+            req.productID = 'hello';
 
             await fetchProduct(req, res);
 
@@ -137,7 +137,7 @@ describe('Test get product controller', function () {
         it('Should send OK with product in JSON res', function (done) {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.product_doc = {
+            req.product = {
                 _doc: {
                     _id: '123',
                     rest: 'rest'
@@ -191,10 +191,10 @@ describe('Test get product controller', function () {
             await fetchProductsSummary(req, res, function () {
             });
 
-            expect(req).to.have.property('products_docs');
-            expect(req.products_docs).to.be.an('array').that.has.length(2);
+            expect(req).to.have.property('products');
+            expect(req.products).to.be.an('array').that.has.length(2);
 
-            const products = req.products_docs.map(product => product._doc);
+            const products = req.products.map(product => product._doc);
 
             expect(products).to.deep.include.members([
                 {
@@ -225,7 +225,7 @@ describe('Test get product controller', function () {
         it('Should return OK with products in JSON res', function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.products_docs = [
+            req.products = [
                 {
                     _doc: 'doc1',
                     rest: 'rest1'

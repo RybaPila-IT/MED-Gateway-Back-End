@@ -43,7 +43,7 @@ describe('Test get user controller', function () {
                 });
         });
 
-        it('Should set user_doc in req object', async function () {
+        it('Should set user in req object', async function () {
             const {req, res} = httpMocks.createMocks();
             // Prepare request
             req.token = {
@@ -54,8 +54,8 @@ describe('Test get user controller', function () {
             });
 
             expect(req).to.have.property('token');
-            expect(req).to.have.property('user_doc');
-            expect(req.user_doc._doc).to.deep.include({
+            expect(req).to.have.property('user');
+            expect(req.user._doc).to.deep.include({
                 _id: user._id,
                 name: 'test',
                 surname: 'test',
@@ -63,7 +63,7 @@ describe('Test get user controller', function () {
                 organization: 'test',
                 status: 'verified'
             });
-            expect(req.user_doc._doc).to.not.have.property('password');
+            expect(req.user._doc).to.not.have.property('password');
         });
 
         it('Should return BAD_REQUEST with "message" field in JSON', async function () {
@@ -109,7 +109,7 @@ describe('Test get user controller', function () {
 
             const {req, res} = httpMocks.createMocks();
             // Setting up the req
-            req.user_doc = {
+            req.user = {
                 _doc: {
                     _id: new mongoose.Types.ObjectId(),
                     name: 'test',

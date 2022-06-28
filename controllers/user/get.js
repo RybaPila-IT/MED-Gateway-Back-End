@@ -7,7 +7,7 @@ const {
 } = require('../../middleware/authenticate');
 
 const getUserData = async (req, res, next) => {
-    const {_id} = req.token;
+    const {_id: userID} = req.token;
     const projection = {
         password: 0,
         registered_at: 0,
@@ -17,7 +17,7 @@ const getUserData = async (req, res, next) => {
     };
     let user = undefined;
     try {
-        user = await User.findById(_id, projection);
+        user = await User.findById(userID, projection);
     } catch (err) {
         log.log('error', 'GET USER', 'Error at getUserData:', err.message);
         return res
@@ -27,14 +27,14 @@ const getUserData = async (req, res, next) => {
             });
     }
     if (!user) {
-        log.log('warning', 'GET USER', 'Obtained token with user id', _id, 'which was not found in database');
+        log.log('warning', 'GET USER', 'Obtained token with user id', userID, 'which was not found in database');
         return res
             .status(httpStatus.BAD_REQUEST)
             .json({
                 message: 'Obtained invalid token'
             });
     }
-    req.user_doc = user;
+    req.user = user;
     next();
 }
 
@@ -43,12 +43,12 @@ const sendResponse = (req, res) => {
     res
         .status(httpStatus.OK)
         .json({
-            ...req.user_doc['_doc']
+            ...req.user['_doc']
         });
     // Result log.
     log.log(
         'info', 'GET USER', 'Sent personal information about',
-        req.user_doc.name, req.user_doc.surname, req.user_doc._id.toString()
+        req.user.name, req.user.surname, req.user._id.toString()
     );
 }
 

@@ -10,24 +10,24 @@ const {
 } = require('../products/get');
 
 const fetchHistory = async (req, res, next) => {
-    const {product_id} = req;
-    const {_id: user_id} = req.token;
-    const filter = {product_id, user_id};
+    const {productID} = req;
+    const {_id: userID} = req.token;
+    const filter = {product_id: productID, user_id: userID};
     const update = {};
     const options = {upsert: true, new: true};
-    let historyDoc = undefined;
+    let history = undefined;
     try {
         // Using findOneAndUpdate in order to use upsert option.
-        historyDoc = await History.findOneAndUpdate(filter, update, options).exec();
+        history = await History.findOneAndUpdate(filter, update, options).exec();
     } catch (err) {
         log.log('error', 'GET HISTORY', 'Error at fetchHistory:', err.message);
         return res
             .status(httpStatus.INTERNAL_SERVER_ERROR)
             .json({
-                message: `Internal error while fetching history for product ${product_id}`
+                message: `Internal error while fetching history for product ${productID}`
             });
     }
-    req.history_doc = historyDoc;
+    req.history = history;
     next();
 }
 
@@ -35,16 +35,16 @@ const sendResponse = (req, res) => {
     res
         .status(httpStatus.OK)
         .json({
-            entries: req.history_doc.entries
+            entries: req.history.entries.map(entry => entry['_doc'])
         });
     // Log the success info.
     log.log(
         'info',
         'GET HISTORY',
         'Sent history entries for user',
-        req.history_doc.user_id.toString(),
+        req.history.user_id.toString(),
         'of product',
-        req.history_doc.product_id.toString()
+        req.history.product_id.toString()
     )
 }
 

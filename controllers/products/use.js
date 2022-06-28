@@ -107,10 +107,10 @@ const convertImageData = async (req, res, next) => {
 
 
 const makePrediction = async (req, res, next) => {
-    const {product_id} = req;
+    const {productID} = req;
     const {data} = req.body;
-    const productEndpointUrl = `${Endpoints.Products[product_id]}/predict`;
-    const accessToken = process.env[EnvKeys.productsAccessTokens[product_id]];
+    const productEndpointUrl = `${Endpoints.Products[productID]}/predict`;
+    const accessToken = process.env[EnvKeys.productsAccessTokens[productID]];
     let predictionResponse = undefined;
     try {
         predictionResponse = checkResponseStatus(
@@ -140,9 +140,9 @@ const makePrediction = async (req, res, next) => {
 
 
 const storePredictionPhotoResultInCloudinary = async (req, res, next) => {
-    const {product_id} = req;
+    const {productID} = req;
     // End execution if we do not need to store photo.
-    if (!productStoresPhoto[product_id]) {
+    if (!productStoresPhoto[productID]) {
         req.body.photo_url = '';
         req.body.has_photo = false;
         // Continue the execution pipeline.
@@ -150,10 +150,10 @@ const storePredictionPhotoResultInCloudinary = async (req, res, next) => {
     }
     // Identifier of the asset will be random.
     const {photo} = req.body.data;
-    const {_id: user_id} = req.token;
+    const {_id: userID} = req.token;
     const public_id = uuid.v4();
     const file = `data:image/png;base64,${photo}`;
-    const folder = `predictions/${user_id}`;
+    const folder = `predictions/${userID}`;
     let photoResult = undefined;
     try {
         photoResult = await cloudinary.uploader.upload(file, {
@@ -180,9 +180,9 @@ const storePredictionPhotoResultInCloudinary = async (req, res, next) => {
 const storePredictionResultInDatabase = async (req, res, next) => {
     const {patient_name, patient_surname, description, has_photo, photo_url, date} = req.body;
     const {prediction} = req.body.data;
-    const {history_doc} = req;
+    const {history} = req;
     try {
-        await history_doc.updateOne({
+        await history.updateOne({
             $push: {
                 entries: {
                     patient_name,
@@ -208,8 +208,8 @@ const storePredictionResultInDatabase = async (req, res, next) => {
 
 
 const sendResponse = (req, res) => {
-    const {_id: user_id} = req.token;
-    const {product_id} = req;
+    const {_id: userID} = req.token;
+    const {productID} = req;
     const {photo_url} = req.body;
     const {prediction} = req.body.data;
 
@@ -222,7 +222,7 @@ const sendResponse = (req, res) => {
         });
     // Final logging
     log.log(
-        'info', 'USE PRODUCT', 'User', user_id, 'successfully used product', product_id,
+        'info', 'USE PRODUCT', 'User', userID, 'successfully used product', productID,
         '. Result photo URL is "', photo_url, '"'
     );
 }

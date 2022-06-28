@@ -55,9 +55,7 @@ const fetchUserModelByEmail = async (req, res, next) => {
 const verifyUserPassword = async (req, res, next) => {
     const {password: providedPassword} = req;
     const {password: originalPassword} = req.user;
-
     let match = false;
-
     try {
         match = await bcrypt.compare(providedPassword, originalPassword);
     } catch (err) {
@@ -68,10 +66,9 @@ const verifyUserPassword = async (req, res, next) => {
                 message: 'Error while checking the password'
             });
     }
-    // Continue after bcrypt finishes
     if (!match) {
-        const {_id, name, surname} = req.user;
-        log.log('info', 'LOGIN', 'Invalid credentials for user', name, surname, _id.toString());
+        const {_id: userID, name, surname} = req.user;
+        log.log('info', 'LOGIN', 'Invalid credentials for user', name, surname, userID.toString());
         return res
             .status(httpStatus.UNAUTHORIZED)
             .json({

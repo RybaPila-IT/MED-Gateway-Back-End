@@ -39,42 +39,42 @@ describe('Test get history controller', function () {
             });
         });
 
-        it('Should set history_doc in req', async function () {
+        it('Should set history in req', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
             req.token = {
                 _id: '537eed02ed345b2e039652d2'
             };
-            req.product_id = '537eed02ed345b2e039652d2';
+            req.productID = '537eed02ed345b2e039652d2';
 
             await fetchHistory(req, res, function () {
             });
 
-            expect(req).to.have.property('history_doc');
-            expect(req.history_doc).to.have.property('user_id').and.to.be.deep.equal(
+            expect(req).to.have.property('history');
+            expect(req.history).to.have.property('user_id').and.to.be.deep.equal(
                 new mongoose.Types.ObjectId('537eed02ed345b2e039652d2')
             );
-            expect(req.history_doc).to.have.property('product_id').and.to.be.deep.equal(
+            expect(req.history).to.have.property('product_id').and.to.be.deep.equal(
                 new mongoose.Types.ObjectId('537eed02ed345b2e039652d2')
             );
         });
 
-        it('Should create new history and set history_doc in req', async function () {
+        it('Should create new history and set history in req', async function () {
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
             req.token = {
                 _id: '537eed02ed345b2e039652d3'
             };
-            req.product_id = '537eed02ed345b2e039652d3';
+            req.productID = '537eed02ed345b2e039652d3';
 
             await fetchHistory(req, res, function () {
             });
 
-            expect(req).to.have.property('history_doc');
-            expect(req.history_doc).to.have.property('user_id').and.to.be.deep.equal(
+            expect(req).to.have.property('history');
+            expect(req.history).to.have.property('user_id').and.to.be.deep.equal(
                 new mongoose.Types.ObjectId('537eed02ed345b2e039652d3')
             );
-            expect(req.history_doc).to.have.property('product_id').and.to.be.deep.equal(
+            expect(req.history).to.have.property('product_id').and.to.be.deep.equal(
                 new mongoose.Types.ObjectId('537eed02ed345b2e039652d3')
             );
 
@@ -89,7 +89,7 @@ describe('Test get history controller', function () {
             req.token = {
                 _id: '537eed02ed345b2e039652d3'
             };
-            req.product_id = 'hello';
+            req.productID = 'hello';
 
             await fetchHistory(req, res, function () {
             });
@@ -111,18 +111,22 @@ describe('Test get history controller', function () {
             const history = {
                 user_id: new mongoose.Types.ObjectId(),
                 product_id: new mongoose.Types.ObjectId(),
-                entries: ['1', '2', '3']
+                entries: [
+                    {_doc: '1'},
+                    {_doc: '2'},
+                    {_doc: '3'},
+                ]
             };
             const {req, res} = httpMocks.createMocks();
             // Preparing the req
-            req.history_doc = history;
+            req.history = history;
 
             sendResponse(req, res);
 
             expect(res._getStatusCode()).to.be.equal(httpStatus.OK);
             expect(res._isJSON()).to.be.true;
             expect(res._getJSONData()).to.have.property('entries');
-            expect(res._getJSONData().entries).to.include.members(history.entries);
+            expect(res._getJSONData().entries).to.include.members(['1', '2', '3']);
             done();
         });
 

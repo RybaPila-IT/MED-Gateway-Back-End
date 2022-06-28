@@ -1,13 +1,13 @@
 const mongoose = require('mongoose');
 
 const validID = (ID) => {
-    let objId = undefined;
+    let objID = undefined;
     try {
-        objId = new mongoose.Types.ObjectId(ID);
+        objID = new mongoose.Types.ObjectId(ID);
     } catch (err) {
         return false;
     }
-    return objId.toString() === ID;
+    return objID.toString() === ID;
 }
 
 

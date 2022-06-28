@@ -149,7 +149,7 @@ describe('Test use product controller', function () {
             const data = 'This is some data';
             const {req, res} = httpMocks.createMocks({body: {data}});
             // Setting up the req
-            req.product_id = productID;
+            req.productID = productID;
             // Setting up nock for the request.
             nock(Endpoints.Products[productID])
                 .post('/predict', body => body === data)
@@ -211,7 +211,7 @@ describe('Test use product controller', function () {
             };
             const {req, res} = httpMocks.createMocks({body});
             // Preparing the req
-            req.history_doc = historyDOC;
+            req.history = historyDOC;
 
             await storePredictionResultInDatabase(req, res, function () {
             });
