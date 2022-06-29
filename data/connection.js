@@ -1,32 +1,26 @@
-const chalk = require('chalk');
 const mongoose = require('mongoose');
+const log = require('npmlog');
 
-function setUpMongooseConnection(uriKey, callback = () => {}, verbose = false) {
-    const makeInitialMongooseConnection = () => {
-        mongoose
-            .connect(process.env[uriKey])
-            .then(() => {
-                if (verbose) {
-                    console.log(chalk.magenta('Successfully connected to Mongo database'));
-                }
-                callback();
-            })
-            .catch(err => {
-                console.log(chalk.red('Error while connecting to Mongo database', err.message));
-            })
-    }
-    const setUpMongooseEventListeners = () => {
-        mongoose.connection.on('error', err => {
-            console.log(chalk.red('Mongoose error:', err));
-        });
-        mongoose.connection.on('disconnected', () => {
-            if (verbose) {
-                console.log(chalk.magenta('Disconnected from Mongo database'));
-            }
-        });
-    }
-    makeInitialMongooseConnection();
-    setUpMongooseEventListeners();
+const EnvKeys = require('../env/keys');
+
+function setUpConnection(callback = _ => {}) {
+    const mongoURI = process.env[EnvKeys.mongoDbUri];
+    mongoose.connect(mongoURI)
+        .then(_ => {
+            // Setting up listeners for mongoose events.
+            mongoose.connection.on('error', err => {
+                log.log('error', 'MONGOOSE', 'Mongoose error:', err)
+            });
+            mongoose.connection.on('disconnected', _ => {
+                log.log('warn', 'MONGOOSE', 'Disconnected from Mongo database');
+            });
+            log.log('info', 'MONGOOSE', 'Successfully connected to MongoDB database');
+            // Executing user callback.
+            callback();
+        })
+        .catch(err => {
+            log.log('error', 'MONGOOSE', 'Mongo connection error:', err.message);
+        })
 }
 
-module.exports = setUpMongooseConnection;
+module.exports = setUpConnection;

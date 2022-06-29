@@ -1,54 +1,21 @@
 #!/usr/bin/env node
 const app = require('../app');
-const debug = require('debug')('med-gateway-back-end:server');
-const http = require('http');
+const log = require('npmlog');
+const dbConnect = require('../data/connection');
+const port = process.env.PORT || 3000;
 
-const {mongoDbUriKey} = require('../suppliers/constants')
-const setUpMongooseConnection = require('../data/connection');
-const supplyPort = require('../suppliers/port');
+// Setting up the logger style.
+log.level = 'info';
+log.prefixStyle = {
+    fg: 'magenta',
+    bg: 'grey',
+    underline: true
+};
+log.enableColor();
 
-const port = supplyPort();
-const server = http.createServer(app);
-
-setUpMongooseConnection(mongoDbUriKey, ()=>{}, true);
-
-server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
-
-
-function onError(error) {
-    if (error.syscall !== 'listen') {
-        throw error;
-    }
-
-    const bind = typeof port === 'string'
-        ? 'Pipe ' + port
-        : 'Port ' + port;
-
-    // handle specific listen errors with friendly messages
-    switch (error.code) {
-        case 'EACCES':
-            console.error(bind + ' requires elevated privileges');
-            process.exit(1);
-            break;
-        case 'EADDRINUSE':
-            console.error(bind + ' is already in use');
-            process.exit(1);
-            break;
-        default:
-            throw error;
-    }
-}
-
-/**
- * Event listener for HTTP server "listening" event.
- */
-
-function onListening() {
-    const addr = server.address();
-    const bind = typeof addr === 'string'
-        ? 'pipe ' + addr
-        : 'port ' + addr.port;
-    debug('Listening on ' + bind);
-}
+// After we set up the connection we start the app.
+dbConnect(_ => {
+    app.listen(port, _ => {
+        log.log('info', 'Start', 'Listening on port', port);
+    });
+});
