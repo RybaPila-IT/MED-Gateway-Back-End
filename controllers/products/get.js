@@ -58,11 +58,13 @@ const fetchProduct = async (req, res, next) => {
 }
 
 const sendSingleProductResponse = (req, res) => {
+    const {product} = req.context;
     res
         .status(httpStatus.OK)
         .json({
-            ...req.context.product['_doc']
+            ...product['_doc']
         });
+    log.log('info', 'GET SINGLE PRODUCT', 'Sent information about', product.name, product._id.toString());
 }
 
 const fetchProductsSummary = async (req, res, next) => {

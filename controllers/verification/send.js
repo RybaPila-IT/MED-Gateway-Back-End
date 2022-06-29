@@ -8,12 +8,20 @@ const {fetchUserModelByEmail} = require('../user/login');
 
 
 const requireEmailInBody = (req, res, next) => {
+    const medGatewayEmail = 'med-gateway@outlook.com';
     const {email} = req.body;
     if (!email) {
         return res
             .status(httpStatus.BAD_REQUEST)
             .json({
                 message: 'Email property is missing'
+            });
+    }
+    if (email === medGatewayEmail) {
+        return res
+            .status(httpStatus.BAD_REQUEST)
+            .json({
+                message: 'Very funny, you can not use our email!'
             });
     }
     req.context.email = email;

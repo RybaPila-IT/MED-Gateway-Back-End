@@ -1,8 +1,9 @@
 name: Tests
 on: pull_request
 env:
-  MONGO_TEST_URI: ${{ secrets.MONGO_TEST_URI }}
   JWT_SECRET: ${{ secrets.JWT_SECRET }}
+  FETAL_NET_ACCESS_TOKEN: ${{ secrets.FETAL_NET_ACCESS_TOKEN }}
+  DICOM_CONVERTER_ACCESS_TOKEN: ${{ secrets.DICOM_CONVERTER_ACCESS_TOKEN }}
 jobs:
   build-and-test:
     runs-on: ubuntu-latest

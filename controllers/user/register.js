@@ -13,6 +13,7 @@ const {
 
 
 const requireRegisterData = (req, res, next) => {
+    const medGatewayEmail = 'med-gateway@outlook.com'
     const {name, surname, email, password, organization} = req.body;
     const userProperties = [
         {prop: name, propName: 'Name'},
@@ -29,6 +30,13 @@ const requireRegisterData = (req, res, next) => {
                     message: `${item.propName} was not provided but is necessary to register the user`
                 });
         }
+    }
+    if (email === medGatewayEmail) {
+        return res
+            .status(httpStatus.BAD_REQUEST)
+            .json({
+                message: 'Very funny, you can not use our email!'
+            });
     }
     req.context = {
         ...req.context,
