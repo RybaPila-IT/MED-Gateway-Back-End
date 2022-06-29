@@ -152,10 +152,12 @@ describe('Test get product controller', function () {
             req.context = {
                 product: {
                     _doc: {
-                        _id: '123',
+                        _id: new mongoose.Types.ObjectId('0000007b99ccd28759885d0a'),
                         rest: 'rest'
                     },
-                    rest2: 'some additional stuff'
+                    rest2: 'some additional stuff',
+                    _id: new mongoose.Types.ObjectId('0000007b99ccd28759885d0a'),
+                    name: 'test'
                 }
             };
 
@@ -164,7 +166,7 @@ describe('Test get product controller', function () {
             expect(res._getStatusCode()).to.be.equal(httpStatus.OK);
             expect(res._isJSON()).to.be.true;
             expect(res._getJSONData()).to.deep.include({
-                _id: '123',
+                _id: '0000007b99ccd28759885d0a',
                 rest: 'rest'
             });
             done();
