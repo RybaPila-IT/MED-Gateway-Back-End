@@ -69,12 +69,12 @@ describe('Test use product controller', function () {
 
     describe('Test ensure prediction properties are present', function () {
 
-        it('Should call next and set body data into req.context', function (done) {
+        it('Should call next and set dicom_data into req.context', function (done) {
             const body = {
                 patient_name: 'test',
                 patient_surname: 'test',
                 description: 'tes',
-                data: 'data',
+                dicom_data: 'dicom data',
                 date: 'date'
             };
             const {req, res} = httpMocks.createMocks({body});
@@ -87,7 +87,7 @@ describe('Test use product controller', function () {
                 patient_name: 'test',
                 patient_surname: 'test',
                 description: 'tes',
-                data: 'data',
+                dicom_data: 'dicom data',
                 date: 'date'
             });
         });
@@ -125,23 +125,24 @@ describe('Test use product controller', function () {
 
     describe('Test convert image data', function () {
 
-        it('Should set converted data into req.context.data', async function () {
-            const data = 'sample data'
+        it('Should set converted data into req.context.converted_dicom_data', async function () {
+            const dicom_data = 'sample data'
             // Setting up nock for the request.
             nock(Endpoints.DicomConverter)
-                .post('/convert', body => body === data)
+                .post('/convert', body => body === dicom_data)
                 .reply(200, {data: {pixels: 'Converted pixels'}});
 
             const {req, res} = httpMocks.createMocks();
             // Prepare the req
             req.context = {
-                data
+                dicom_data
             };
 
             await convertImageData(req, res, function () {
             });
 
-            expect(req.context.data).to.be.deep.equal({data: {pixels: 'Converted pixels'}});
+            expect(req.context).to.have.property('converted_dicom_data');
+            expect(req.context.converted_dicom_data).to.be.deep.equal({data: {pixels: 'Converted pixels'}});
         });
 
         it('Should return INTERNAL_SERVER_ERROR with "message" in JSON res', async function () {
@@ -170,16 +171,16 @@ describe('Test use product controller', function () {
 
         it('Should set prediction and photo into req.context', async function () {
             const productID = '625576dda784a265d36ff314';
-            const data = 'This is some data';
+            const converted_dicom_data = 'This is some data';
             const {req, res} = httpMocks.createMocks();
             // Setting up the req
             req.context = {
                 productID,
-                data
+                converted_dicom_data
             };
             // Setting up nock for the request.
             nock(Endpoints.Products[productID])
-                .post('/predict', body => body === data)
+                .post('/predict', body => body === converted_dicom_data)
                 .reply(200, {
                     prediction: {result1: '1', result2: '2'},
                     photo: 'Sample photo'

@@ -23,9 +23,9 @@ app.use(cookieParser());
 app.use(
     cors({
         origin: '*',
-        methods: ['GET', 'POST']
+        methods: ['GET', 'POST', 'OPTIONS']
     })
-)
+);
 
 // Endpoints config.
 app.use('/', indexRouter);

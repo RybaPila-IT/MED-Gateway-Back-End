@@ -45,12 +45,12 @@ const productIsActive = (req, res, next) => {
 
 
 const ensurePredictionPropertiesArePresent = (req, res, next) => {
-    const {patient_name, patient_surname, description, data, date} = req.body;
+    const {patient_name, patient_surname, description, dicom_data, date} = req.body;
     const predictionRequestProperties = [
         {prop: patient_name, propName: 'Patient name'},
         {prop: patient_surname, propName: 'Patient surname'},
         {prop: description, propName: 'Description'},
-        {prop: data, propName: 'Data'},
+        {prop: dicom_data, propName: 'DICOM image data'},
         {prop: date, propName: 'Date'}
     ];
     for (const item of predictionRequestProperties) {
@@ -68,7 +68,7 @@ const ensurePredictionPropertiesArePresent = (req, res, next) => {
         patient_name,
         patient_surname,
         description,
-        data,
+        dicom_data,
         date
     };
     next();
@@ -76,7 +76,7 @@ const ensurePredictionPropertiesArePresent = (req, res, next) => {
 
 
 const convertImageData = async (req, res, next) => {
-    const {data} = req.context;
+    const {dicom_data} = req.context;
     const token = process.env[EnvKeys.dicomConverterAccessToken];
     const dicomConverterURL = `${Endpoints.DicomConverter}/convert`
     let converterResponse = undefined;
@@ -84,7 +84,7 @@ const convertImageData = async (req, res, next) => {
         converterResponse = checkResponseStatus(
             await fetch(dicomConverterURL, {
                 method: 'post',
-                body: JSON.stringify(data),
+                body: JSON.stringify(dicom_data),
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
@@ -99,16 +99,14 @@ const convertImageData = async (req, res, next) => {
                 message: 'Error while converting provided DICOM image'
             });
     }
-    // Set the response bytes to the actual data now.
-    // Previous DICOM bytes are redundant.
-    req.context.data = await converterResponse.json();
+    req.context.converted_dicom_data = await converterResponse.json();
     // Continue the pipeline execution.
     next();
 }
 
 
 const makePrediction = async (req, res, next) => {
-    const {productID, data} = req.context;
+    const {productID, converted_dicom_data} = req.context;
     const productEndpointUrl = `${Endpoints.Products[productID]}/predict`;
     const accessToken = process.env[EnvKeys.productsAccessTokens[productID]];
     let predictionResponse = undefined;
@@ -116,7 +114,7 @@ const makePrediction = async (req, res, next) => {
         predictionResponse = checkResponseStatus(
             await fetch(productEndpointUrl, {
                 method: 'post',
-                body: JSON.stringify(data),
+                body: JSON.stringify(converted_dicom_data),
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${accessToken}`
@@ -133,7 +131,7 @@ const makePrediction = async (req, res, next) => {
     }
     // Response has uniformed API in a form:
     // "prediction: {...}
-    // "photo": "..."
+    // "photo": "..." (base64 encoded result image in PNG)
     const {prediction, photo} = await predictionResponse.json();
     // Store the result into context.
     req.context = {
@@ -141,7 +139,6 @@ const makePrediction = async (req, res, next) => {
         prediction,
         photo
     };
-    // Continue pipeline execution.
     next();
 }
 
