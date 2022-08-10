@@ -130,7 +130,7 @@ describe('Test use product controller', function () {
             // Setting up nock for the request.
             nock(Endpoints.DicomConverter)
                 .post('/convert', body => body === dicom_data)
-                .reply(200, {data: {pixels: 'Converted pixels'}});
+                .reply(200, {photo: 'Converted pixels', attributes: {atr1: 'atr1'}});
 
             const {req, res} = httpMocks.createMocks();
             // Prepare the req
@@ -142,7 +142,10 @@ describe('Test use product controller', function () {
             });
 
             expect(req.context).to.have.property('converted_dicom_data');
-            expect(req.context.converted_dicom_data).to.be.deep.equal({data: {pixels: 'Converted pixels'}});
+            expect(req.context.converted_dicom_data).to.be.deep.equal({
+                photo: 'Converted pixels',
+                attributes: {atr1: 'atr1'}
+            });
         });
 
         it('Should return INTERNAL_SERVER_ERROR with "message" in JSON res', async function () {
